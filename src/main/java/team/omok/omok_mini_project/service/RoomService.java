@@ -10,11 +10,11 @@ public class RoomService {
 
     private final RoomManager roomManager = RoomManager.getInstance();
 
-    public Room createRoom(String userId) {
-        if (userId == null) {
+    public Room createRoom(String login_id) {
+        if (login_id == null) {
             throw new IllegalStateException("로그인 필요");
         }
-        return roomManager.createRoom(userId);
+        return roomManager.createRoom(login_id);
     }
 
     public void enterRoom(String roomId, UserVO user) {

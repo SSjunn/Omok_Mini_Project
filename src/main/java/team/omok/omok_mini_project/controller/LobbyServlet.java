@@ -52,7 +52,7 @@ public class LobbyServlet extends HttpServlet {
 
         if ("/create".equals(path)) {
             System.out.println("[INFO]lobby-doPost-create");
-            Room room = roomService.createRoom(user.getId());
+            Room room = roomService.createRoom(user.getLoginId());
             response.sendRedirect("/omok/room?roomId=" + room.getRoomId());
         }
 
