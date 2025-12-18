@@ -18,7 +18,7 @@ public class HttpSessionConfigurator extends ServerEndpointConfig.Configurator{
 
         if (httpSession != null) {
             UserVO vo = (UserVO) httpSession.getAttribute("loginUser");
-            String userId = vo.getId();
+            int userId = vo.getUserId();
 
             config.getUserProperties().put("user_id", userId);
         }

@@ -31,18 +31,22 @@ public class Room {
     private static final int MAX_PLAYER = 2;
 
     private final String roomId;
-    private final String ownerId;
-    private final List<String> players = new ArrayList<>(MAX_PLAYER);           // 플레이어
+    private final int ownerId;
+    private final long createdAt;  // 방 생성 시간 (FIFO용)
+
+    private final List<Integer> players = new ArrayList<>(MAX_PLAYER);           // 플레이어(user_id 저장)
     private final Set<Session> playerSessions = ConcurrentHashMap.newKeySet();        // 플레이어 세션
     private final Set<Session> spectators = ConcurrentHashMap.newKeySet();      // 관전자 세션
+
     private Game game;                              // 게임
     private RoomStatus status;                      // 방 상태: WAITING, READY, COUNTDOWN, PLAYING, END
 
-    public Room(String roomId, String ownerId) {
+    public Room(String roomId, int ownerId) {
         this.roomId = roomId;
         this.ownerId = ownerId;
         this.players.add(ownerId);              // 방장은 자동 입장
-        status = RoomStatus.WAIT;
+        this.status = RoomStatus.WAIT;
+        this.createdAt = System.currentTimeMillis();
     }
 
     ////////////// 상태 관리 ///////////////
@@ -66,7 +70,8 @@ public class Room {
 
                 break;
             case END:
-
+                broadcast("{\"type\":\"ROOM_END\",\"reason\":\"EMPTY\"}");
+                RoomManager.getInstance().removeRoom(this.roomId);
                 break;
 
             default:
@@ -74,11 +79,9 @@ public class Room {
         }
     }
 
-
-
     ////////////// 세션 관리 ///////////////
 
-    public synchronized void addSession(String userId, Session session) {
+    public synchronized void addSession(int userId, Session session) {
         System.out.println("[INFO]Room-addSession: " + session);
         if(players.contains(userId)){
             playerSessions.add(session);
@@ -91,10 +94,14 @@ public class Room {
         }
     }
 
-    public synchronized void removeSession(String userId, Session session) {
-        players.remove(userId);
+    public synchronized void removeSession(int userId, Session session) {
+        System.out.println("players: " + players + " / " + playerSessions);
+        System.out.println("removeSession: user: " + userId + " / 세션:" + session.getId());
+        players.remove(Integer.valueOf(userId));
         playerSessions.remove(session);
         spectators.remove(session);
+        System.out.println("players: " + players + "/" + playerSessions);
+
 
         // 게임 도중 방 나간 경우
         if(!isReady() && status == RoomStatus.PLAYING){
@@ -105,14 +112,20 @@ public class Room {
         if(!isReady() && (status == RoomStatus.READY || status == RoomStatus.COUNTDOWN)){
             updateStatus(RoomStatus.WAIT);
         }
+
+        // 아예 방이 비어버린 경우
+        if(playerSessions.isEmpty() && players.isEmpty()){
+            updateStatus(RoomStatus.END);
+        }
     }
 
-    public synchronized void tryAddPlayer(String userId) {
+    public synchronized void tryAddPlayer(int userId) {
         if (isFull()) {
             throw new IllegalStateException("방이 가득 찼습니다");
         }
         players.add(userId);
     }
+
 
     ////////////// 게임 흐름 제어 ///////////////
 
@@ -184,5 +197,3 @@ public class Room {
 
 
 }
-
-

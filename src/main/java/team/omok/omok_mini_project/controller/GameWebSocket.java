@@ -28,6 +28,7 @@ public class GameWebSocket {
 
         this.roomId = roomId;
 
+        // 게임 방 확인
         Room room = roomManager.getRoomById(roomId);
         if (room == null){
             try {
@@ -36,13 +37,16 @@ public class GameWebSocket {
                 throw new RuntimeException(e);
             }
         }
-        String userId = (String) session.getUserProperties().get("user_id");
+
+        // 유저 확인
+        int userId = Integer.parseInt(String.valueOf(session.getUserProperties().get("user_id")));
+
+        // 방에 유저 등록 및 연결
         if(room != null){
             room.addSession(userId, session);
             System.out.println("[INFO]방 상태: " + room.getStatus());
             room.tryStartGame();
         }
-//        Objects.requireNonNull(room).addSession(userId, session);
 
         session.getBasicRemote().sendText("CONNECTED");
     }
@@ -61,7 +65,8 @@ public class GameWebSocket {
     public void onClose(Session session) {
         System.out.println("[WS CLOSE] sessionId=" + session.getId());
         Room room = roomManager.getRoomById(roomId);
-        String userId = (String) session.getUserProperties().get("user_id");
+
+        int userId = Integer.parseInt(String.valueOf(session.getUserProperties().get("user_id")));
 
         if (room != null) {
             room.removeSession(userId, session);
