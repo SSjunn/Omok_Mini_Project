@@ -3,7 +3,7 @@ package team.omok.omok_mini_project.controller;
 import team.omok.omok_mini_project.domain.RankingDTO;
 import team.omok.omok_mini_project.domain.Room;
 import team.omok.omok_mini_project.domain.UserVO;
-import team.omok.omok_mini_project.repository.LobbyDAO;
+import team.omok.omok_mini_project.repository.RecordDAO;
 import team.omok.omok_mini_project.service.RoomService;
 
 import javax.servlet.annotation.WebServlet;
@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.List;
+
+
 
 @WebServlet("/lobby/*")
 // 방 목록 조회,방 생성, 방입장(방 관련 비즈니스 로직)
@@ -80,16 +82,15 @@ public class LobbyServlet extends HttpServlet {
         // 기본: 로비 화면
         // 대기 중인 방 목록 가져옴
         List<Room> rooms = roomService.getWaitingRooms();
-        request.setAttribute("rooms", rooms);
-
-        // 랭킹 데이터 가져오기 (TOP 5)
-        // TODO: 임시 비활성화 - DB에 record 테이블이 없어서 에러 발생
-        // LobbyDAO lobbyDAO = new LobbyDAO();
-        // List<RankingDTO> rankings = lobbyDAO.getTopRank();
-        // 빈 리스트 전달 (JSP에서 에러 방지)
-        request.setAttribute("rankings", new java.util.ArrayList<RankingDTO>());
-
+//        request.setAttribute("rooms", rooms);
+        // 랭킹 정보 조회
+        List<RankingDTO> rankingList = RecordDAO.getTopRank();
+        // JSP에서 쓸수 있도록 request에 저장
+        request.setAttribute("rankingList", rankingList); // 랭킹정보
+        request.setAttribute("rooms", rooms); // room 정보
         // 실제 화면인 lobby.jsp로 포워딩
+        // 빈 리스트 전달 (JSP에서 에러 방지)
+//        request.setAttribute("rankings", new java.util.ArrayList<RankingDTO>());
         request.getRequestDispatcher("/WEB-INF/views/lobby.jsp")
                 .forward(request, response);
     }
