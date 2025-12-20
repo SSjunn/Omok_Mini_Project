@@ -1,6 +1,10 @@
 package team.omok.omok_mini_project.domain;
 
 import java.util.Arrays;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import team.omok.omok_mini_project.enums.GameStatus;
 import team.omok.omok_mini_project.enums.Stone;
@@ -18,6 +22,30 @@ import team.omok.omok_mini_project.enums.Stone;
 public class GameState {
     public static final int SIZE = 15;
     private static final int NONE = -1;
+    
+    // 턴 제한 시간
+    private static final long TURN_LIMIT_MS = 30_000L;
+
+    // 전체 게임에서 공유하는 스케줄러(방/게임마다 스레드 안 늘리기)
+    private static final ScheduledExecutorService TURN_TIMER =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "omok-turn-timer");
+                t.setDaemon(true);
+                return t;
+            });
+
+    // MoveResult 쪽에서 TIMEOUT reason으로 바꿔치기 위해 쓰는 ThreadLocal
+    private static final ThreadLocal<String> REASON_OVERRIDE = new ThreadLocal<>();
+
+    static void setReasonOverride(String reason) {
+        REASON_OVERRIDE.set(reason);
+    }
+
+    static String consumeReasonOverride() {
+        String v = REASON_OVERRIDE.get();
+        if (v != null) REASON_OVERRIDE.remove();
+        return v;
+    }
 
     private final Stone[][] board = new Stone[SIZE][SIZE];
 
@@ -30,6 +58,13 @@ public class GameState {
 
     // 승자 (Users.user_id), 없으면 -1
     private int winnerId;
+    
+    // 타이머 상태
+    private long turnDeadlineMs;          // 현재 턴 마감 시각(epoch ms)
+    private int turnSeq;                  // 스케줄 레이스 방지용 시퀀스
+    private ScheduledFuture<?> timeoutFuture;
+
+    private String endReason;
 
     public GameState() {
         reset();
@@ -45,6 +80,12 @@ public class GameState {
         this.blackUserId = NONE;
         this.whiteUserId = NONE;
         this.winnerId = NONE;
+        
+        this.turnDeadlineMs = 0L;
+        this.turnSeq = 0;
+        this.endReason = null;
+
+        cancelTimeoutLocked();
     }
 
     public static Stone opposite(Stone s) {
@@ -83,68 +124,133 @@ public class GameState {
         }
         this.turn = turn;
     }
-
-    public void switchTurn() {
+    
+    /**
+     * 정상 착수 후 OmokRule이 호출함
+     * -> 여기서 턴을 바꾸면서 다음 턴 30초를 "자동"으로 리셋한다.
+     */
+    public synchronized void switchTurn() {
         this.turn = opposite(this.turn);
-    }
 
-    public GameStatus getStatus() {
-        return status;
-    }
-
-    public void startGame() {
-        this.status = GameStatus.IN_PROGRESS;
-        this.winnerId = NONE;
-    }
-
-    // 종료(승자 없음)
-    public void endGame() {
-        this.status = GameStatus.FINISHED;
-    }
-
-    // 종료(승자 기록)
-    public void endGame(int winnerId) {
-        this.status = GameStatus.FINISHED;
-        this.winnerId = winnerId;
-    }
-
-    public void setStatus(GameStatus status) {
-        this.status = status;
-        if (status != GameStatus.FINISHED) {
-            this.winnerId = NONE;
+        // 게임 진행중이면 다음 턴 타이머 재시작
+        if (this.status == GameStatus.IN_PROGRESS) {
+            scheduleTurnTimeoutLocked();
         }
     }
 
-    // 유저(Players) 매핑
+    /**
+     * OmokRule이 가장 먼저 호출하는 곳
+     * - TIMEOUT으로 이미 종료된 게임이면, MoveResult reason을 TIMEOUT으로 바꿔치기하도록 ThreadLocal 설정
+     * - 혹시 스케줄이 밀렸더라도 deadline 지난 경우 여기서 즉시 timeout 처리(안전망)
+     */
+    public synchronized GameStatus getStatus() {
+        if (this.status == GameStatus.IN_PROGRESS) {
+            long now = System.currentTimeMillis();
+            if (this.turnDeadlineMs > 0 && now > this.turnDeadlineMs) {
+                // 스케줄이 늦었거나 edge 케이스일 때 즉시 timeout 처리
+                forceTimeoutLocked();
+            }
+        }
 
-    public int getBlackUserId() {
+        if (this.status != GameStatus.IN_PROGRESS && "TIMEOUT".equals(this.endReason)) {
+            setReasonOverride("TIMEOUT");
+        }
+
+        return status;
+    }
+
+    public synchronized void startGame() {
+        this.status = GameStatus.IN_PROGRESS;
+        this.winnerId = NONE;
+        this.endReason = null;
+
+        // 게임 시작 = 흑 턴 시작 -> 30초 타이머 시작
+        scheduleTurnTimeoutLocked();
+    }
+
+    public synchronized void endGame() {
+        this.status = GameStatus.FINISHED;
+        cancelTimeoutLocked();
+    }
+
+    // 종료(승자 기록)
+    public synchronized void endGame(int winnerId) {
+        this.status = GameStatus.FINISHED;
+        this.winnerId = winnerId;
+        cancelTimeoutLocked();
+    }
+    
+    public synchronized int getBlackUserId() {
         return blackUserId;
     }
 
-    public int getWhiteUserId() {
-        return whiteUserId;
-    }
-
-    public void setBlackUserId(int userId) {
+    public synchronized void setBlackUserId(int userId) {
         this.blackUserId = userId;
     }
 
-    public void setWhiteUserId(int userId) {
+    public synchronized int getWhiteUserId() {
+        return whiteUserId;
+    }
+
+    public synchronized void setWhiteUserId(int userId) {
         this.whiteUserId = userId;
     }
 
-    // Stone(색) -> Users.user_id 변환
-    public int getUserIdByStone(Stone stone) {
+    public synchronized int getUserIdByStone(Stone stone) {
         if (stone == Stone.BLACK) return blackUserId;
         if (stone == Stone.WHITE) return whiteUserId;
         return NONE;
     }
 
-    public int getWinnerId() {
+    public synchronized int getWinnerId() {
         return winnerId;
     }
 
-    public void setWinnerId(int winnerId) {
-        this.winnerId = winnerId;
+    // 타이머 내부 로직
+    private void scheduleTurnTimeoutLocked() {
+        cancelTimeoutLocked();
+
+        long now = System.currentTimeMillis();
+        this.turnDeadlineMs = now + TURN_LIMIT_MS;
+        int seqSnapshot = ++this.turnSeq;
+
+        this.timeoutFuture = TURN_TIMER.schedule(() -> {
+            synchronized (GameState.this) {
+                // 이미 게임이 끝났으면 무시
+                if (status != GameStatus.IN_PROGRESS) return;
+                // 턴이 넘어가서 seq가 바뀌었으면(늦게 실행된 타이머) 무시
+                if (turnSeq != seqSnapshot) return;
+                forceTimeoutLocked();
+            }
+        }, TURN_LIMIT_MS, TimeUnit.MILLISECONDS);
+    }
+
+    private void forceTimeoutLocked() {
+        if (this.status != GameStatus.IN_PROGRESS) return;
+
+        // 현재 턴 플레이어가 시간초과 패배
+        Stone loserStone = this.turn;
+        int winner = getUserIdByStone(opposite(loserStone));
+
+        this.winnerId = winner;
+        this.status = GameStatus.FINISHED;
+        this.endReason = "TIMEOUT";
+
+        cancelTimeoutLocked();
+    }
+
+    private void cancelTimeoutLocked() {
+        if (this.timeoutFuture != null) {
+            this.timeoutFuture.cancel(false);
+            this.timeoutFuture = null;
+        }
+    }
+    
+    public synchronized long getTurnDeadlineMs() {
+        return turnDeadlineMs;
+    }
+
+    public synchronized String getEndReason() {
+        return endReason;
     }
 }

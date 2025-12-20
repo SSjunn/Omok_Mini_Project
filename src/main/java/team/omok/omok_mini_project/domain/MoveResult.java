@@ -53,7 +53,11 @@ public class MoveResult {
     }
 
     // 턴 아님
-    public static MoveResult invalidTurn(String reason) {
+    static MoveResult invalidTurn(String reason) {
+        String override = GameState.consumeReasonOverride();
+        if (override != null) {
+            reason = override; // TIMEOUT
+        }
         return new MoveResult(GameResultType.INVALID_TURN, NONE, NONE, NONE, reason);
     }
 
