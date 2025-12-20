@@ -86,11 +86,12 @@ public class Room {
         try{
             if(this.players.contains(userId)){
                 UserVO vo = userService.getUserById(userId);
-                this.playerSessions.add(session);broadcastAll(new WsMessage<>(
+                this.playerSessions.add(session);
+                broadcastAll(new WsMessage<>(
                         MessageType.JOIN,
                         Map.of(
                                 "userId", userId,
-                                "profileImg", vo.getProfileImg()
+                                "userInfo", vo
                         )
                 ));
 
