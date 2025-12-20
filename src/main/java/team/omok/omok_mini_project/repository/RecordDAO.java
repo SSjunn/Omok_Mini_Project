@@ -34,13 +34,13 @@ public class RecordDAO {
         return list;
     }
 
-    public void updataRating(int userId, boolean isWin) {
+    public void updateRating(int userId, boolean isWin) {
         String sql;
 
         if(isWin) {
-            sql = "UPDATE record SET rating = rating +15, win_count = win_count+1, updated_at = timestamp WHERE user_id = ?";
+            sql = "UPDATE record SET rating = rating +15, win_count = win_count+1, updated_at = NOW() WHERE user_id = ?";
         } else {
-            sql = "UPDATE record SET rating = GREATEST(0, rating - 10), lose_count = lose_count + 1, updated_at = timestamp WHERE user_id = ?";
+            sql = "UPDATE record SET rating = GREATEST(0, rating - 10), lose_count = lose_count + 1, updated_at = NOW() WHERE user_id = ?";
         }
 
         try(Connection conn = DBConnection.getConnection();

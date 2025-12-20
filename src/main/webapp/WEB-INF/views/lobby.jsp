@@ -15,7 +15,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-image: url("../../img/LobbyBackground.jpg");
+            background-image: url("${pageContext.request.contextPath}/img/LobbyBackground.jpg");
             background-size: cover;
             background-position: center;
         }
@@ -26,7 +26,6 @@
             height: 100%;
             position: relative;
             padding: 20px;
-            background-color: rgba(255, 255, 255, 0.4);
         }
 
         .panel {
