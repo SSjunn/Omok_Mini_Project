@@ -2,9 +2,11 @@ package team.omok.omok_mini_project.domain;
 
 import lombok.Data;
 import team.omok.omok_mini_project.domain.dto.WsMessage;
+import team.omok.omok_mini_project.domain.vo.UserVO;
 import team.omok.omok_mini_project.enums.MessageType;
 import team.omok.omok_mini_project.enums.RoomStatus;
 import team.omok.omok_mini_project.manager.RoomManager;
+import team.omok.omok_mini_project.service.UserService;
 import team.omok.omok_mini_project.util.JsonUtil;
 
 import javax.websocket.Session;
@@ -28,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Data
 public class Room {
+    UserService userService = new UserService();
+
     private static final int MAX_PLAYER = 2;
 
     private final String roomId;
@@ -79,19 +83,29 @@ public class Room {
     // 세션에 유저 혹은 관전자 추가
     public synchronized void addSession(int userId, Session session) {
         System.out.println("[INFO]Room-addSession: " + session);
+        try{
+            if(this.players.contains(userId)){
+                UserVO vo = userService.getUserById(userId);
+                this.playerSessions.add(session);broadcastAll(new WsMessage<>(
+                        MessageType.JOIN,
+                        Map.of(
+                                "userId", userId,
+                                "profileImg", vo.getProfileImg()
+                        )
+                ));
 
-        if(this.players.contains(userId)){
-            this.playerSessions.add(session);
-            broadcastAll(new WsMessage<>(MessageType.JOIN, userId));
-        }else{
-            this.spectatorSessions.add(session);
-        }
+            }else{
+                this.spectatorSessions.add(session);
+            }
+
+        }catch (Exception e){}
 
         if(isReady() && this.status == RoomStatus.WAIT){
             System.out.println("플레이어 세션: " + session.getId());
             updateStatus(RoomStatus.READY);
         }
     }
+
 
     // 세션에서 유저 혹은 관전자 삭제
     public synchronized void removeSession(int userId, Session session) {

@@ -7,6 +7,11 @@ public class UserService {
 
     private UserDAO userDAO = new UserDAO();
 
+    public UserVO getUserById(int userId) throws Exception {
+
+        return userDAO.findByUserId(userId);
+    }
+
     public void register(UserVO user) throws Exception {
 
         if (user.getLoginId() == null || user.getLoginId().isBlank())

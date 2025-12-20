@@ -1,8 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ page import="team.omok.omok_mini_project.domain.Room" %>
+<%@ page import="team.omok.omok_mini_project.domain.vo.UserVO" %>
 <%
   Room room = (Room) request.getAttribute("room");
+  UserVO loginUser = (UserVO) session.getAttribute("loginUser");
 %>
+
+
+
 
 <!DOCTYPE html>
 <html>
@@ -34,8 +39,6 @@
 <p id="status">상대방을 기다리는 중...</p>
 <p id="countdown"></p>
 
-<%--<div id="board"></div>--%>
-
 
 <button id="leaveBtn">방 나가기</button>
 
@@ -47,12 +50,12 @@
 
       <!-- 플레이어 프로필 -->
       <div class="player player-1">
-        <img src="/omok/static/img/patrik.png">
+        <img src="<%= request.getContextPath() %>/static/img/profile/<%= loginUser.getProfileImg() %>">
         <div class="bubble" id="bubble-p1"></div>
       </div>
 
       <div class="player player-2">
-        <img src="/omok/static/img/spongebob.png">
+        <img src="<%= request.getContextPath() %>/static/img/profile/<%= loginUser.getProfileImg() %>">
         <div class="bubble" id="bubble-p2"></div>
       </div>
     </div>

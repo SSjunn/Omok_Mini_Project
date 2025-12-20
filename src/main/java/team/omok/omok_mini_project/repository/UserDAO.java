@@ -12,7 +12,34 @@ public class UserDAO {
 
     //    public UserDAO(DataSource ds) {
 //        this.ds = ds;//db주입받음
-//    }
+
+
+    public UserVO findByUserId(int userId) throws Exception {
+        String sql = """
+            SELECT user_id, login_id, user_pwd, created_at, nickname, profile_img
+            FROM users
+            WHERE user_id=?
+        """;
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+
+                UserVO u = new UserVO();
+                u.setUserId(rs.getInt("user_id"));
+                u.setLoginId(rs.getString("login_id"));
+                u.setUserPwd(rs.getString("user_pwd"));
+                u.setCreatedAt(rs.getTimestamp("created_at"));
+                u.setNickname(rs.getString("nickname"));
+                u.setProfileImg(rs.getString("profile_img"));
+                return u;
+            }
+        }
+    }
 
     public UserVO findByLoginId(String loginId) throws Exception {
         String sql = """

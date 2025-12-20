@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @function public Room createRoom(String userId)
  * @function public boolean removeRoom(int roomId)
  * @see Room
+ *
  */
 public class RoomManager {
     private static final RoomManager instance = new RoomManager();          // 싱글톤 인스턴스
@@ -36,6 +37,10 @@ public class RoomManager {
         Room room = new Room(roomId, userId);
         rooms.put(roomId, room);
         System.out.println("[INFO]RoomManager - createRoom:" + roomId);
+
+        // 로비에 방 목록 업데이트 전송 (실시간으로 방이 나타남)
+        LobbyManager.getInstance().broadcastRoomList();
+
         return room;
     }
 
@@ -46,6 +51,9 @@ public class RoomManager {
         }
         System.out.println("[INFO]RoomManager - enterRoom:" + roomId);
         room.tryAddPlayer(user.getUserId());
+
+        // 로비에 방 목록 업데이트 전송 (방이 가득 차면 목록에서 사라짐)
+        LobbyManager.getInstance().broadcastRoomList();
     }
 
     public void enterRoomAsSpectator(String roomId, Session session){
@@ -57,7 +65,14 @@ public class RoomManager {
     }
 
     public boolean removeRoom(String roomId){
-        return rooms.remove(roomId) != null;
+        boolean removed = rooms.remove(roomId) != null;
+
+        // 로비에 방 목록 업데이트 전송 (실시간으로 방이 사라짐)
+        if (removed) {
+            LobbyManager.getInstance().broadcastRoomList();
+        }
+
+        return removed;
     }
 
     public Room getRoomById(String roomId) {
