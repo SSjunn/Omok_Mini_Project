@@ -36,10 +36,7 @@
   <!-- 왼쪽 : 게임 -->
   <section class="game-section">
 
-    <!-- 타이틀 -->
-    <div class="game-title">
-      <img src="<%=request.getContextPath()%>/static/img/game/gametitle.png" alt="SpongeBob Omok">
-    </div>
+
 
     <!-- 게임 보드 영역 -->
     <div class="board-area">
@@ -53,6 +50,10 @@
       </div>
 
       <div class="board-stack">
+        <!-- 타이틀 -->
+        <div class="game-title floating-title">
+          <img src="<%=request.getContextPath()%>/static/img/game/gametitle.png" alt="SpongeBob Omok">
+        </div>
         <div class="board-wrapper">
           <div id="board"></div>
         </div>

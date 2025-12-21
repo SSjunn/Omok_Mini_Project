@@ -25,7 +25,7 @@ body {
 
 /* 컨테이너 레이아웃 */
 .room-container {
-    position: relative;
+    position: absolute;
     display: flex;
     height: 850px;
 
@@ -59,7 +59,6 @@ body {
 .game-section {
     flex: 3;
     display: flex;
-    flex-direction: column;
     align-items: center;
     padding: 20px;
     position: relative;
@@ -75,7 +74,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 30px;
     width: 100%;
 }
 
@@ -86,14 +84,22 @@ body {
     width: 150px;
 }
 
+.player-left {
+    margin-left: 35px;
+}
+
+.player-right {
+    margin-right: 35px;
+}
+
 .profile-frame {
     width: 120px;
     height: 120px;
-    border: 5px solid #ffa500;
-    border-radius: 20px;
+    border: 5px solid #ffffff;
+    border-radius: 100px;
     overflow: hidden;
     background: #fff;
-    box-shadow: 5px 5px 0px #c06000;
+    box-shadow: 5px 5px 0px #555352;
 }
 
 .profile-img {
@@ -139,6 +145,14 @@ body {
     align-items: center;
 }
 
+.floating-title {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    pointer-events: none;
+}
+
 .board-wrapper {
     padding: 0;
     background: none;
@@ -149,28 +163,28 @@ body {
 #board {
     position: relative;
 
-    width: 525px;   /* 35px × 15 */
-    height: 525px;
+    width: 700px;
+    height: 700px;
 
-    background: url("../img/game/board.png") no-repeat;
+    background: url("../img/game/board2.png") no-repeat;
     background-size: 100% 100%;
 
-    display: grid;
-    grid-template-columns: repeat(14, 1fr);
-    grid-template-rows: repeat(14, 1fr);
+    /*display: grid;*/
+    /*grid-template-columns: repeat(14, 1fr);*/
+    /*grid-template-rows: repeat(14, 1fr);*/
 }
 
 .grid-layer {
     position: absolute;
 
-    top: 48px;
-    left: 48px;
-    right: 48px;
-    bottom: 48px;
+    top: 80px;
+    left: 80px;
+    right: 80px;
+    bottom: 80px;
 
     display: grid;
-    grid-template-columns: repeat(14, 1fr);
-    grid-template-rows: repeat(14, 1fr);
+    grid-template-columns: repeat(15, 1fr);
+    grid-template-rows: repeat(15, 1fr);
 }
 
 .cell {
@@ -181,40 +195,66 @@ body {
     min-height: 1px;
 }
 
+@keyframes drop {
+    from {
+        transform: scale(0.6) translateY(-6px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
 .cell.black::after,
 .cell.white::after {
     content: "";
     position: absolute;
-    inset: 18%;              /* 돌 크기 조절 */
-    border-radius: 50%;
-}
+    inset: 12%;               /* ← 조개 크기 조절 */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 
-/* 흑돌 */
+    animation: drop 0.15s ease-out;
+
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.35));
+}
+/* 흑 플레이어 조개 */
 .cell.black::after {
-    background: radial-gradient(
-            circle at 30% 30%,
-            #555,
-            #000 70%
-    );
-    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+    background-image: url("../img/game/stone1.png");
 }
 
-/* 백돌 */
+/* 백 플레이어 조개 */
 .cell.white::after {
-    background: radial-gradient(
-            circle at 30% 30%,
-            #fff,
-            #ddd 70%
-    );
-    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+    background-image: url("../img/game/stone2.png");
 }
+
+
+/*!* 흑돌 *!*/
+/*.cell.black::after {*/
+/*    background: radial-gradient(*/
+/*            circle at 30% 30%,*/
+/*            #555,*/
+/*            #000 70%*/
+/*    );*/
+/*    box-shadow: 0 3px 6px rgba(0,0,0,0.4);*/
+/*}*/
+
+/*!* 백돌 *!*/
+/*.cell.white::after {*/
+/*    background: radial-gradient(*/
+/*            circle at 30% 30%,*/
+/*            #fff,*/
+/*            #ddd 70%*/
+/*    );*/
+/*    box-shadow: 0 3px 6px rgba(0,0,0,0.25);*/
+/*}*/
 
 /* 타이머 바 */
 .timerbar {
-    width: 100%;
-    height: 15px;
+    width: 85%;
+    height: 20px;
     background: #eee;
-    margin-top: 20px;
     border-radius: 10px;
     border: 2px solid #333;
     overflow: hidden;
@@ -223,8 +263,8 @@ body {
 /* 구분선 */
 .vertical-divider {
     width: 4px;
-    background: #FFD700;
-    margin: 40px 0;
+    background: #08080824;
+    margin: 20px 0;
 }
 
 /* 오른쪽 채팅 섹션 */
@@ -234,35 +274,47 @@ body {
     display: flex;
     flex-direction: column;
     padding: 20px;
-    background: #fffbe6;
+    /*background: #fffbe6;*/
     height: 100%; /* 부모 높이를 꽉 채우도록 설정 */
     box-sizing: border-box; /* 패딩이 높이에 영향을 주지 않도록 */
 }
 
 .leave-btn {
-    flex-shrink: 0; /* 버튼 크기 고정 */
-    background: #ff4d4d;
-    color: white;
+    width: 100%;
+    height: 70px;
+
+    background: url("../img/game/leave2.png") no-repeat center;
+    background-size: cover;
+
     border: none;
-    padding: 12px;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: bold;
+    padding: 0;
     cursor: pointer;
-    margin-bottom: 15px;
+
+    text-indent: -9999px; /* 텍스트 숨김 */
 }
 
 /* 채팅 로그: 중간 영역을 모두 차지하고 스크롤 생성 */
 .chat-log {
     flex-grow: 1; /* 남은 공간을 모두 차지 */
-    background: white;
-    border: 2px solid #FFD700;
+    /*background: white;*/
+    background: url("../img/game/chatback3.png") no-repeat center;
+    background-size: auto;
+    border: none;
     border-radius: 15px;
-    padding: 15px;
+    padding: 20px 18px;
     overflow-y: auto; /* 내용이 많아지면 스크롤 생성 */
     margin-bottom: 15px;
     font-size: 14px;
     box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);
+}
+
+.chat-log::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-log::-webkit-scrollbar-thumb {
+    background: #FFD700;
+    border-radius: 3px;
 }
 
 /* 하단 입력 영역: 항상 아래에 고정 */
@@ -275,16 +327,26 @@ body {
 
 #chatInput {
     flex-grow: 1;
+    height: 45px;
+
+    background: url("../img/game/chatinput.png") no-repeat;
+    background-size: 100% 100%;
+
+    border: none;
+    border-radius: 10px;
+
     padding: 0 15px;
-    border: 2px solid #FFD700;
-    border-radius: 8px;
     outline: none;
+
     font-family: 'Bazzi', sans-serif;
+    font-size: 14px;
 }
 
 #sendChat {
-    width: 70px;
-    background: #4CAF50;
+    width: 80px;
+    background: url("../img/game/send.png") no-repeat center;;
+    background-size: cover;
+
     color: white;
     border: none;
     border-radius: 8px;
@@ -297,253 +359,3 @@ body {
     background: #45a049;
 }
 
-
-/* ////////////////////////////////////////////////////////////////// */
-
-
-
-
-/*.room-container {*/
-/*    display: flex;*/
-/*    justify-content: center; !* 자식 요소들을 중앙으로 모음 *!*/
-/*    align-items: center;*/
-/*    width: 100vw;*/
-/*    height: 100vh;*/
-/*    overflow: hidden; !* 스크롤 방지 *!*/
-/*    background:*/
-/*            linear-gradient(rgba(111, 211, 231, 0.4), rgba(181, 238, 247, 0.4)),*/
-/*            url("../img/game/game_background.png") no-repeat center center / cover;*/
-/*}*/
-
-/*.game-section {*/
-/*    width: 800px; !* 고정 너비로 설정하여 사이즈 정돈 *!*/
-/*    height: 90vh;*/
-/*    display: flex;*/
-/*    flex-direction: column;*/
-/*    align-items: center;*/
-/*    justify-content: center;*/
-/*}*/
-
-/*.game-title {*/
-/*    margin-top: 20px;*/
-/*    margin-bottom: 10px;*/
-/*}*/
-
-/*.game-title img {*/
-/*    height: 60px;*/
-/*}*/
-
-/*.board-area {*/
-/*    position: relative;*/
-/*    width: 100%;*/
-/*    height: 600px;*/
-/*    display: flex;*/
-/*    justify-content: center;*/
-/*    align-items: center;*/
-/*    gap: 20px; !* 플레이어와 보드 사이 간격 *!*/
-/*}*/
-
-/*.board-wrapper {*/
-/*    flex-shrink: 0; !* 사이즈 줄어들지 않게 *!*/
-/*    width: 560px;*/
-/*    height: 560px;*/
-/*    background: url("../img/game/board.png") no-repeat center / 100% 100%;*/
-/*    display: flex;*/
-/*    justify-content: center;*/
-/*    align-items: center;*/
-/*}*/
-
-
-
-/*#board {*/
-/*    width: 480px;*/
-/*    height: 480px;*/
-/*    display: grid;*/
-/*    grid-template-columns: repeat(14, 32px);*/
-/*    grid-template-rows: repeat(14, 32px);*/
-/*}*/
-
-
-/*.cell {*/
-/*    width: 32px;*/
-/*    height: 32px;*/
-/*    box-sizing: border-box;*/
-/*    border: 1px solid rgba(0,0,0,0.2);*/
-/*}*/
-
-/*.player {*/
-/*    position: relative; !* absolute에서 relative로 변경하여 보드 옆에 정렬 *!*/
-/*    width: 140px;*/
-/*    display: flex;*/
-/*    flex-direction: column;*/
-/*    align-items: center;*/
-/*    z-index: 2;*/
-/*    top: auto;*/
-/*    left: auto;*/
-/*    right: auto;*/
-/*    transform: none;*/
-/*}*/
-
-/*.player img {*/
-/*    width: 72px;*/
-/*    height: 72px;*/
-/*    border-radius: 50%;*/
-/*    border: 4px solid #ffd166;*/
-/*    background: white;*/
-/*}*/
-
-/*!* 왼쪽 *!*/
-/*.player-left {*/
-/*    left: calc(50% - 360px);*/
-/*    top: 50%;*/
-/*    transform: translateY(-50%);*/
-/*}*/
-
-/*!* 오른쪽 *!*/
-/*.player-right {*/
-/*    right: calc(50% - 360px);*/
-/*    top: 50%;*/
-/*    transform: translateY(-50%);*/
-/*}*/
-
-/*.profile-frame {*/
-/*    width: 110px;*/
-/*    height: 110px;*/
-
-/*    background-image: url("../img/game/profileBorder.png");*/
-/*    background-size: 100% 100%;*/
-/*    background-repeat: no-repeat;*/
-
-/*    display: flex;*/
-/*    justify-content: center;*/
-/*    align-items: center;*/
-/*}*/
-
-
-/*.profile-img {*/
-/*    width: 72px;*/
-/*    height: 72px;*/
-/*    border-radius: 50%;*/
-/*    object-fit: cover;*/
-/*}*/
-
-
-/*.player.active .profile-frame {*/
-/*    filter: drop-shadow(0 0 12px rgba(255, 230, 120, 0.9));*/
-/*    transform: scale(1.05);*/
-/*}*/
-
-/*.speech-bubble {*/
-/*    width: 160px;*/
-/*    min-height: 64px;*/
-
-/*    padding: 12px 14px;*/
-
-/*    background-size: 100% 100%;*/
-/*    background-repeat: no-repeat;*/
-
-/*    display: inline-flex;*/
-/*    align-items: center;*/
-/*    justify-content: center;*/
-
-/*    text-align: center;*/
-/*    font-size: 13px;*/
-/*    line-height: 1.4;*/
-/*}*/
-
-
-/*!* 왼쪽(파랑) *!*/
-/*.player-left .speech-bubble {*/
-/*    background-image: url("../img/game/chatbackblue.png");*/
-/*}*/
-
-/*!* 오른쪽(흰색) *!*/
-/*.player-right .speech-bubble {*/
-/*    background-image: url("../img/game/chatbackwhite.png");*/
-/*}*/
-
-/*.vertical-divider {*/
-/*    width: 60px;*/
-/*    height: 80vh;*/
-/*    background: url("../img/game/divider.png") no-repeat center / contain;*/
-/*    flex-shrink: 0;*/
-/*}*/
-
-
-/*@keyframes sway {*/
-/*    0% { transform: translateY(0); }*/
-/*    50% { transform: translateY(4px); }*/
-/*    100% { transform: translateY(0); }*/
-/*}*/
-
-/*.chat-section {*/
-/*    width: 350px; !* 사이즈 축소 *!*/
-/*    height: 85vh;*/
-/*    display: flex;*/
-/*    flex-direction: column;*/
-/*    padding: 20px;*/
-/*    margin-left: 20px; !* 디바이더와의 간격 *!*/
-/*    align-items: flex-end; !* LEAVE 버튼 등을 오른쪽으로 *!*/
-/*}*/
-
-/*.chat-log {*/
-/*    width: 100%;*/
-/*    flex: 1;*/
-/*    margin-top: 10px;*/
-/*    margin-bottom: 10px;*/
-/*    background: url("../img/game/chatback.png") no-repeat center / 100% 100%;*/
-/*}*/
-
-/*.chat-input {*/
-/*    width: 100%;*/
-/*    display: flex;*/
-/*    gap: 5px;*/
-/*}*/
-
-/*.chat-input input {*/
-/*    flex: 1;*/
-/*    height: 44px;*/
-/*    padding: 0 14px;*/
-
-/*    border: none;*/
-/*    outline: none;*/
-
-/*    background-image: url("../img/game/chatinput.png");*/
-/*    background-size: 100% 100%;*/
-/*    background-repeat: no-repeat;*/
-/*    background-position: center;*/
-
-/*    background-color: transparent;*/
-/*}*/
-
-/*.chat-input button {*/
-/*    width: 88px;*/
-/*    height: 44px;*/
-/*    border: none;*/
-/*    cursor: pointer;*/
-
-/*    background-image: url("../img/game/send.png");*/
-/*    background-size: contain;*/
-/*    background-repeat: no-repeat;*/
-/*    background-position: center;*/
-
-/*    background-color: transparent;*/
-/*}*/
-
-/*.leave-btn {*/
-/*    width: 110px;*/
-/*    height: 48px;*/
-/*    border: none;*/
-/*    cursor: pointer;*/
-
-/*    background-image: url("../img/game/leave.png");*/
-/*    background-size: contain;*/
-/*    background-repeat: no-repeat;*/
-/*    background-position: center;*/
-
-/*    background-color: transparent;*/
-/*}*/
-
-/*.leave-btn, .chat-input button {*/
-/*    color: transparent;*/
-/*}*/

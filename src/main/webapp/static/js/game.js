@@ -1,4 +1,4 @@
-const BOARD_SIZE = 14;
+const BOARD_SIZE = 15;
 let currentTurn = null;
 
 const boardState = Array.from(

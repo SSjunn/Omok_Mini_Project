@@ -3,8 +3,8 @@ const countdownEl = document.getElementById("countdown");
 const boardEl = document.getElementById("board");
 const playerLeftEl = document.querySelector(".player-left");
 const playerRightEl = document.querySelector(".player-right");
-
-console.log("ui.js loaded", boardEl);
+let gridLayer = null;
+// console.log("ui.js loaded", boardEl);
 
 const messageHandlers = {
     JOIN: handleJoin,
@@ -97,10 +97,10 @@ function renderBoard() {
     boardEl.className = "board";
     console.log("boardEl:", boardEl);
 
-    const grid = document.createElement("div");
-    grid.className = "grid-layer";
-    boardEl.appendChild(grid);
-    
+    gridLayer = document.createElement("div");
+    gridLayer.className = "grid-layer";
+    boardEl.appendChild(gridLayer);
+
     for (let y = 0; y < BOARD_SIZE; y++) {
         for (let x = 0; x < BOARD_SIZE; x++) {
             const cell = document.createElement("div");
@@ -109,14 +109,14 @@ function renderBoard() {
                 console.log("cell clicked:", x, y);
                 placeStone(x, y);
             }
-            boardEl.appendChild(cell);
+            gridLayer.appendChild(cell);
         }
     }
 }
 
 function drawStone(x, y, color) {
     const idx = y * BOARD_SIZE + x;
-    const cell = boardEl.children[idx];
+    const cell = gridLayer.children[idx];
 
     cell.classList.add(color === "BLACK" ? "black" : "white");
 }
