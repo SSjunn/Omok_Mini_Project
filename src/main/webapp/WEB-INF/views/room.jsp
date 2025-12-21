@@ -1,8 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ page import="team.omok.omok_mini_project.domain.Room" %>
+<%@ page import="team.omok.omok_mini_project.domain.vo.UserVO" %>
 <%
   Room room = (Room) request.getAttribute("room");
+  UserVO loginUser = (UserVO) session.getAttribute("loginUser");
 %>
+
+
+
 
 <!DOCTYPE html>
 <html>
@@ -27,47 +32,64 @@
 
 <body>
 
-<h2>오목 게임방</h2>
-<p>방 ID: <%= room.getRoomId() %></p>
-<p>방장: <%= room.getOwnerId() %></p>
-
-<p id="status">상대방을 기다리는 중...</p>
-<p id="countdown"></p>
-
-<%--<div id="board"></div>--%>
+<div class="room-container">
+  <!-- 왼쪽 : 게임 -->
+  <section class="game-section">
 
 
-<button id="leaveBtn">방 나가기</button>
 
-<div class="container">
-  <!-- 게임 영역 -->
-  <div class="game-area">
-    <div class="board-wrapper">
-      <div id="board"></div>
-
-      <!-- 플레이어 프로필 -->
-      <div class="player player-1">
-        <img src="/omok/static/img/patrik.png">
-        <div class="bubble" id="bubble-p1"></div>
+    <!-- 게임 보드 영역 -->
+    <div class="board-area">
+      <div class="player player-left">
+        <div class="profile-frame">
+          <img class="profile-img" src="<%=request.getContextPath()%><%=loginUser.getProfileImg()%>">
+        </div>
+        <div class="speech-bubble" id="bubble-p1">
+          <span class="bubble-text"></span>
+        </div>
       </div>
 
-      <div class="player player-2">
-        <img src="/omok/static/img/spongebob.png">
-        <div class="bubble" id="bubble-p2"></div>
+      <div class="board-stack">
+        <!-- 타이틀 -->
+        <div class="game-title floating-title">
+          <img src="<%=request.getContextPath()%>/static/img/game/gametitle.png" alt="SpongeBob Omok">
+        </div>
+        <div class="board-wrapper">
+          <div id="board"></div>
+        </div>
+
+        <!-- 타이머 바   -->
+        <div class="timerbar"></div>
+      </div>
+
+      <div class="player player-right">
+        <div class="profile-frame">
+          <img class="profile-img" src="<%=request.getContextPath()%><%=loginUser.getProfileImg()%>">
+        </div>
+        <div class="speech-bubble" id="bubble-p2">
+          <span class="bubble-text"></span>
+        </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- 채팅 영역 -->
-  <div class="chat-area">
-    <h3>CHATTING</h3>
-    <div id="chatLog"></div>
+  <div class="vertical-divider"></div>
+
+  <!-- 오른쪽 : 채팅 -->
+  <section class="chat-section">
+
+    <button id="leaveBtn" class="leave-btn">LEAVE</button>
+
+    <div id="chatLog" class="chat-log"></div>
+
     <div class="chat-input">
-      <input type="text" id="chatInput" placeholder="메시지 입력">
-      <button id="sendChat">전송</button>
+      <input id="chatInput" placeholder="메시지 입력">
+      <button id="sendChat">SEND</button>
     </div>
-  </div>
+
+  </section>
 </div>
+
 
 </body>
 

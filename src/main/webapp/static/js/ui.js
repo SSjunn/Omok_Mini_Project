@@ -1,7 +1,10 @@
 const statusEl = document.getElementById("status");
 const countdownEl = document.getElementById("countdown");
 const boardEl = document.getElementById("board");
-console.log("ui.js loaded", boardEl);
+const playerLeftEl = document.querySelector(".player-left");
+const playerRightEl = document.querySelector(".player-right");
+let gridLayer = null;
+// console.log("ui.js loaded", boardEl);
 
 const messageHandlers = {
     JOIN: handleJoin,
@@ -26,71 +29,6 @@ function handleServerMessage(msg) {
     handler(msg.payload);
 }
 
-/*
-function handleServerMessage(msg) {
-    switch (msg.type) {
-        case "JOIN":
-            break;
-        case "LEAVE":
-            break;
-
-        case "COUNTDOWN":
-            showCountdown(msg.payload.sec);
-            break;
-
-        case "GAME_START":
-            statusEl.innerText = "게임 시작!";
-            countdownEl.innerText = "";
-            startGame(msg.payload.firstTurn);
-            break;
-
-        case "MOVE_OK":
-            applyMove(
-                msg.payload.x,
-                msg.payload.y,
-                msg.payload.color
-            );
-            break;
-
-        case "ROOM_WAIT":
-            statusEl.innerText = "상대방을 기다리는 중...";
-            countdownEl.innerText = "";
-            break;
-
-        case "GAME_END":
-            alert("게임 종료: " + msg.payload.reason);
-
-            if(msg.payload.winner) {
-                alert("축하합니다!")
-            }
-            location.href = "/omok/lobby";
-            break;
-
-        case "CHAT":
-            const { senderRole, playerIndex, message } = msg.payload;
-
-            if (senderRole === "PLAYER") {
-                const bubble = document.getElementById(
-                    playerIndex === 1 ? "bubble-p1" : "bubble-p2"
-                );
-
-                bubble.innerText = message;
-                bubble.style.display = "block";
-
-                setTimeout(() => {
-                    bubble.style.display = "none";
-                }, 3000);
-            } else {
-                const chatLog = document.getElementById("chatLog");
-                const div = document.createElement("div");
-                div.innerText = message;
-                chatLog.appendChild(div);
-            }
-            break;
-
-    }
-}*/
-
 function handleJoin(payload) {
     // payload 예시: { userId, role }
     // 지금은 굳이 화면에 표시 안 해도 됨
@@ -106,9 +44,6 @@ function handleCountdown(payload) {
 }
 
 function handleGameStart(payload) {
-    statusEl.innerText = "게임 시작!";
-    countdownEl.innerText = "";
-
     if (payload.myColor) {
         myColor = payload.myColor;
         console.log("내 색:", myColor);
@@ -153,44 +88,57 @@ function handleChat(payload) {
 
 
 function showCountdown(sec) {
-    statusEl.innerText = "게임 준비 중...";
-    countdownEl.innerText = `시작까지 ${sec}초`;
+    // statusEl.innerText = "게임 준비 중...";
+    // countdownEl.innerText = `시작까지 ${sec}초`;
 }
 
 function renderBoard() {
     boardEl.innerHTML = "";
     boardEl.className = "board";
     console.log("boardEl:", boardEl);
+
+    gridLayer = document.createElement("div");
+    gridLayer.className = "grid-layer";
+    boardEl.appendChild(gridLayer);
+
     for (let y = 0; y < BOARD_SIZE; y++) {
         for (let x = 0; x < BOARD_SIZE; x++) {
             const cell = document.createElement("div");
             cell.className = "cell";
-            cell.onclick = () => placeStone(x, y);
-            boardEl.appendChild(cell);
+            cell.onclick = () => {
+                console.log("cell clicked:", x, y);
+                placeStone(x, y);
+            }
+            gridLayer.appendChild(cell);
         }
     }
 }
 
 function drawStone(x, y, color) {
     const idx = y * BOARD_SIZE + x;
-    const cell = boardEl.children[idx];
-    cell.innerText = color === "BLACK" ? "●" : "○";
+    const cell = gridLayer.children[idx];
+
+    cell.classList.add(color === "BLACK" ? "black" : "white");
 }
 
 function showPlayerBubble(playerIndex, message) {
     const bubble = document.getElementById(
         playerIndex === 1 ? "bubble-p1" : "bubble-p2"
     );
-
     if (!bubble) return;
 
-    bubble.innerText = message;
-    bubble.style.display = "block";
+    const textEl = bubble.querySelector(".bubble-text");
+    if (textEl) textEl.textContent = message;
 
-    setTimeout(() => {
-        bubble.style.display = "none";
+    bubble.classList.add("show");
+
+    clearTimeout(bubble._hideTimer);
+    bubble._hideTimer = setTimeout(() => {
+        bubble.classList.remove("show");
     }, 3000);
 }
+
+
 
 function appendSpectatorChat(message) {
     const chatLog = document.getElementById("chatLog");
@@ -210,4 +158,15 @@ function handleError(payload) {
 
     // 지금은 간단히 알림
     alert(message);
+}
+
+function updateActivePlayer(turnColor) {
+    playerLeftEl.classList.remove("active");
+    playerRightEl.classList.remove("active");
+
+    if (turnColor === "BLACK") {
+        playerLeftEl.classList.add("active");
+    } else if (turnColor === "WHITE") {
+        playerRightEl.classList.add("active");
+    }
 }
