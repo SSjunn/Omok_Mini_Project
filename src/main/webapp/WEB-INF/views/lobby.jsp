@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -15,12 +16,12 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-image: url("${pageContext.request.contextPath}/img/LobbyBackground.jpg");
+            background-image: url("${pageContext.request.contextPath}/static/img/LobbyBackground.jpg");
             background-size: cover;
             background-position: center;
         }
 
-        /*  레이아웃 틀*/
+        /* 레이아웃 틀*/
         .wrap {
             width: 100%;
             height: 100%;
@@ -34,23 +35,26 @@
             background-color: #eee;
             padding: 15px;
             box-shadow: 5px 5px 10px rgba(0,0,0,0.2);
+            background-color: rgba(255, 255, 255, 0.5);
         }
 
         /* 왼쪽 패널 (랭킹) */
         .left-panel {
             width: 49%;
-            height: 90%;
+            height: 95%;
             float: left;
             margin-top: 20px;
-            display: flex; flex-direction: column;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         /* 오른쪽 패널 (방목록 + 채팅) */
         .right-panel {
             width: 49%;
-            height: calc(90% - 20px);
+            height: calc(95% - 40px);
             float: right;
-            margin-top: 40px;
+            margin-top: 60px;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -58,9 +62,10 @@
 
         /* 왼쪽: 랭킹 스타일 */
         .rank-list-container {
-            flex-grow: 1;
+            flex: 1.2;
             overflow-y: auto;
             padding-right: 5px;
+            min-height: 0;
         }
         .rank-item {
             width: 98%;
@@ -99,10 +104,56 @@
         .rank-nickname { font-size: 16px; font-weight: bold; display: block; }
         .rank-score { font-size: 13px; color: #666; }
 
-        /*  오른쪽: 방 목록 스타일 */
+        /* left-panel: 채팅 스타일 */
+        .chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #fff;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .chat-message { margin-bottom: 5px; }
+        .chat-nickname { font-weight: bold; color: #d32f2f; margin-right: 5px; }
+
+        .chat-input-area { display: flex; gap: 5px; }
+        #chatInput {
+            flex-grow: 1;
+            padding: 8px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+        }
+        .chat-input-area button {
+            background-color: transparent;
+            border: none;
+            padding: 0 0 0 5px;
+            cursor: pointer;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-input-area button img {
+            height: 38px;
+            width: auto;
+        }
+
+        /* 오른쪽: 방 목록 스타일 */
         .room-section {
-            flex: 1.5;
-            display: flex; flex-direction: column;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             border: 2px inset #ddd;
             background-color: #fff;
             border-radius: 10px;
@@ -113,6 +164,39 @@
             flex-grow: 1;
             overflow-y: auto;
         }
+
+        /* 방 코드 입력 영역 */
+        .room-code-area {
+            display: flex;
+            gap: 5px;
+            margin-top: auto;
+            margin-bottom: 5px;
+            background-color: #fff;
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        #roomCodeInput {
+            flex-grow: 1;
+            padding: 8px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+        }
+        .room-code-area button {
+            background-color: transparent;
+            border: none;
+            padding: 0 0 0 5px;
+            cursor: pointer;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .room-code-area button img {
+            height: 38px;
+            width: auto;
+        }
+
         /* 자바스크립트로 생성될 방 카드 디자인 */
         .room-item {
             background-color: #e3f2fd;
@@ -145,101 +229,126 @@
             font-weight: bold;
         }
 
-        /*  오른쪽: 채팅 스타일 */
-        .chat-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: #fff;
-            border: 2px solid #333;
-            border-radius: 10px;
-            padding: 10px;
-        }
-        .chat-messages {
-            flex-grow: 1;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            background-color: #f9f9f9;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        .chat-message { margin-bottom: 5px; }
-        .chat-nickname { font-weight: bold; color: #d32f2f; margin-right: 5px; }
 
-        .chat-input-area { display: flex; gap: 5px; }
-        #chatInput {
-            flex-grow: 1;
-            padding: 8px;
-            border: 2px solid #ccc;
-            border-radius: 5px;
-        }
-        .chat-input-area button {
-            padding: 8px 15px;
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        /*  하단 버튼 영역 */
+        /* 하단 버튼 영역 */
         .control-area {
             display: flex;
             gap: 10px;
-            height: 50px;
+            margin-top: auto;
+            margin-bottom: 10px;
         }
         .btn-big {
             width: 100%;
-            height: 100%;
+
+            background-color: transparent;
+            border: none;
+            padding: 0;
+            cursor: pointer;
 
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 0;
-
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
-            border: 2px solid black;
-            border-radius: 8px;
-            cursor: pointer;
+            transition: transform 0.2s;
         }
-        .btn-create { background-color: #ff9800; }
-        .btn-quick { background-color: #009688; }
+        .btn-big:hover {
+            transform: scale(1.03);
+        }
+        /* 버튼 내부 이미지 스타일 */
+        .btn-big img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
 
-        /*  유저 프로필 */
+        /* 유저 프로필 */
         .user-profile {
             position: absolute;
-            top: 10px;
+            top: 32px;
             right: 20px;
-            width: 120px;
-            height: 40px;
-            background-color: #333;
-            border-radius: 10px;
-            border: 2px solid white;
+
+            width: 49%;
+            height: 45px;
+
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+
+            background-color: transparent;
+            border: none;
+            padding: 0;
             cursor: pointer;
             z-index: 100;
-            text-align: center;
-            line-height: 40px;
-            color: white;
-            font-weight: bold;
+        }
+        .user-profile img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
         }
         .profile-menu {
             display: none;
             position: absolute;
-            top: 55px;
+            top: 85px;
             right: 20px;
-            width: 200px;
+            width: 250px;
+
             background-color: white;
-            border: 2px solid black;
-            border-radius: 5px;
-            padding: 10px;
-            z-index: 101;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 200;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            font-size: 14px;
+            text-align: center;
         }
+        /* --- 프로필 메뉴 내부 상세 디자인 추가 --- */
+        .menu-header {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .menu-divider {
+            border: 0;
+            border-top: 2px dashed #ccc;
+            margin: 10px 0;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .stat-item {
+            background-color: #f1f1f1;
+            padding: 8px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .stat-label { font-size: 11px; color: #666; margin-bottom: 3px; }
+        .stat-value { font-size: 14px; font-weight: bold; color: #000; }
+
+        /* 승률  */
+        .stat-item.win-rate {
+            grid-column: span 2;
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .logout-btn {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            background-color: #ff5252;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .logout-btn:hover { background-color: #d32f2f; }
     </style>
 </head>
 
@@ -247,16 +356,62 @@
 
 <div class="wrap">
 
-    <div class="user-profile" onclick="toggleMenu()">User</div>
+    <div class="user-profile" onclick="toggleMenu()">
+        <img src="${pageContext.request.contextPath}/static/img/UserBtn.png" alt="User">
+    </div>
     <div id="myMenu" class="profile-menu">
-        <strong>${loginUser != null ? loginUser.nickname : '게스트'}</strong>님<br>
-        <hr>
-        <a href="/omok/login">로그아웃</a>
+        <c:choose>
+            <c:when test="${not empty loginUser}">
+                <div class="menu-header">
+                    <strong>${loginUser.nickname}</strong>님의 정보
+                </div>
+
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">레이팅</span>
+                        <span class="stat-value">${loginUser.record.rating}pt</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">총 경기</span>
+                        <span class="stat-value">${loginUser.record.win_count + loginUser.record.lose_count}전</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">승리</span>
+                        <span class="stat-value" style="color: #d32f2f;">${loginUser.record.win_count}승</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">패배</span>
+                        <span class="stat-value" style="color: #1976d2;">${loginUser.record.lose_count}패</span>
+                    </div>
+
+                    <div class="stat-item win-rate">
+                        <span class="stat-label">승률</span>
+                        <span class="stat-value">
+                            <c:set var="totalMatches" value="${loginUser.record.win_count + loginUser.record.lose_count}" />
+                            <c:choose>
+                                <c:when test="${totalMatches > 0}">
+                                    <fmt:formatNumber value="${(loginUser.record.win_count * 100.0) / totalMatches}" pattern="0.0"/>%
+                                </c:when>
+                                <c:otherwise>0.0%</c:otherwise>
+                            </c:choose>
+                        </span>
+                    </div>
+                </div>
+                <hr class="menu-divider">
+                <a href="/omok/login" class="logout-btn">로그아웃</a>
+            </c:when>
+
+            <c:otherwise>
+                <div class="menu-header">로그인 정보가 없습니다.</div>
+                <hr class="menu-divider">
+                <a href="/omok/login" class="logout-btn">로그인 하러가기</a>
+            </c:otherwise>
+        </c:choose>
     </div>
 
     <div class="left-panel panel">
         <h3 style="text-align: center; border-bottom: 2px dashed #999; padding-bottom: 10px; margin: 0 0 10px 0;">
-             명예의 전당
+            명예의 전당
         </h3>
         <div class="rank-list-container">
             <c:forEach var="ranker" items="${rankingList}">
@@ -273,13 +428,24 @@
                 <div style="text-align: center; padding: 20px; color: gray;">랭킹 데이터 없음</div>
             </c:if>
         </div>
+
+        <div class="chat-section">
+            <div class="chat-messages" id="chatMessages">
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" placeholder="채팅 입력..." onkeypress="handleChatKeyPress(event)">
+                <button onclick="sendChat()">
+                    <img src="${pageContext.request.contextPath}/static/img/SendBtn.png" alt="전송">
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="right-panel panel">
 
         <div class="room-section">
             <h3 style="margin: 0 0 10px 0;">
-                 대기 방
+                대기 방
                 <span id="lobbyStatus" style="font-size: 12px; color: gray; font-weight: normal;">(연결 중...)</span>
             </h3>
 
@@ -287,20 +453,22 @@
             </div>
         </div>
 
-        <div class="chat-section">
-            <div class="chat-messages" id="chatMessages">
-            </div>
-            <div class="chat-input-area">
-                <input type="text" id="chatInput" placeholder="채팅 입력..." onkeypress="handleChatKeyPress(event)">
-                <button onclick="sendChat()">전송</button>
-            </div>
+        <div class="room-code-area">
+            <input type="text" id="roomCodeInput" placeholder="방 번호/코드 입력" onkeypress="handleRoomCodeKeyPress(event)">
+            <button onclick="enterRoomByCode()">
+                <img src="${pageContext.request.contextPath}/static/img/EnterPrivateRoomBtn.png" alt="입장">
+            </button>
         </div>
 
         <div class="control-area">
-            <button class="btn-big btn-quick" style="flex: 1;" onclick="location.href='/omok/lobby/quick-enter'">⚡ 빠른 입장</button>
+            <button class="btn-big" style="flex: 1;" onclick="location.href='/omok/lobby/quick-enter'">
+                <img src="${pageContext.request.contextPath}/static/img/QuickEntryBtn.png" alt="빠른 입장">
+            </button>
 
-            <form action="/omok/lobby/create" method="post" style="flex: 1; margin: 0; height: 100%;">
-                <button type="submit" class="btn-big btn-create">➕ 방 만들기</button>
+            <form action="/omok/lobby/create" method="post" style="flex: 1; margin: 0;">
+                <button type="submit" class="btn-big">
+                    <img src="${pageContext.request.contextPath}/static/img/CreateRoomBtn.png" alt="방 만들기">
+                </button>
             </form>
         </div>
     </div>
@@ -384,9 +552,7 @@
             const spectateBtn = document.createElement("button");
             spectateBtn.className = "btn-spectate";
             spectateBtn.innerText = "관전";
-            spectateBtn.onclick = function() {
-                //location.href = '/omok/lobby/spectate?roomId=' + room.roomId;
-            };
+            // [수정] 사용하지 않는 주석 처리된 코드 삭제
 
             // 조립
             btnGroup.appendChild(joinBtn);
@@ -422,6 +588,21 @@
 
     function handleChatKeyPress(e) {
         if (e.key === "Enter") sendChat();
+    }
+
+    // [복구] 5. 방 코드로 입장하기 (기존 코드에서 누락된 부분 복구)
+    function enterRoomByCode() {
+        const input = document.getElementById("roomCodeInput");
+        const code = input.value.trim();
+        if (code === "") {
+            alert("입장할 방 번호나 코드를 입력해주세요!");
+            return;
+        }
+        location.href = '/omok/lobby/enter?roomId=' + code;
+    }
+
+    function handleRoomCodeKeyPress(e) {
+        if (e.key === "Enter") enterRoomByCode();
     }
 </script>
 
