@@ -41,7 +41,8 @@ public class RoomManager {
         System.out.println("[INFO]RoomManager - createRoom:" + roomId);
 
         // 로비 웹소켓 test용
-        //LobbyManager.getInstance().broadcastRoomList();
+        // TODO: LobbyWebSocket으로 바꾸기
+        LobbyManager.getInstance().broadcastRoomList();
 
         // TODO:
         // 현재는 단순화를 위해 RoomManager에서 직접 LobbyWebSocket을 호출한다.
@@ -60,7 +61,8 @@ public class RoomManager {
         room.tryAddPlayer(user.getUserId());
 
         // 로비 웹소켓 test용
-        //LobbyManager.getInstance().broadcastRoomList();
+        // TODO: LobbyWebSocket으로 바꾸기
+        LobbyManager.getInstance().broadcastRoomList();
 
         // TODO:
         // 현재는 단순화를 위해 RoomManager에서 직접 LobbyWebSocket을 호출한다.
@@ -81,6 +83,7 @@ public class RoomManager {
 
         // 로비에 방 목록 업데이트 전송 (실시간으로 방이 사라짐)
         if (removed) {
+            // TODO: LobbyWebSocket으로 바꾸기
             LobbyManager.getInstance().broadcastRoomList();
         }
 

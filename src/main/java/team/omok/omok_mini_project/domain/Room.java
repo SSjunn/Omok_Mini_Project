@@ -233,7 +233,7 @@ public class Room {
 
     // 게임 종료 함수
     private synchronized void endGame(){
-        // 게임 결과 저장 및 유저 전적 업데이트
+        // TODO: 게임 결과 저장 및 유저 전적 업데이트
         // 게임 상태에서 승자 ID 가져오기
         int winnerId = this.game.state.getWinnerId();
 
