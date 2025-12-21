@@ -1,5 +1,8 @@
 package team.omok.omok_mini_project.domain;
 
+import lombok.Data;
+
+@Data
 public class Game {
     GameState state = new GameState();
     OmokRule rule = new OmokRule();

@@ -3,7 +3,7 @@ package team.omok.omok_mini_project.service;
 import team.omok.omok_mini_project.domain.vo.UserVO;
 import team.omok.omok_mini_project.repository.UserDAO;
 
-public class UserServices {
+public class UserService {
 
     private UserDAO userDAO = new UserDAO();
 

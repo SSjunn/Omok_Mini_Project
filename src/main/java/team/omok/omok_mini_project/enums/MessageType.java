@@ -12,5 +12,6 @@ public enum MessageType {
     MOVE_OK,    // 서버 -> 클라이언트
     GAME_END,
     CHAT,
-    ERROR
+    ERROR,
+    ROOM_MEMBERS
 }

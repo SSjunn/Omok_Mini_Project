@@ -2,36 +2,34 @@ package team.omok.omok_mini_project.domain;
 
 import lombok.Data;
 import team.omok.omok_mini_project.domain.dto.WsMessage;
-import team.omok.omok_mini_project.domain.vo.UserVO;
+import team.omok.omok_mini_project.enums.JoinResult;
+import team.omok.omok_mini_project.enums.LeaveResult;
 import team.omok.omok_mini_project.enums.MessageType;
 import team.omok.omok_mini_project.enums.RoomStatus;
 import team.omok.omok_mini_project.manager.RoomManager;
 import team.omok.omok_mini_project.repository.RecordDAO;
-import team.omok.omok_mini_project.service.UserServices;
-import team.omok.omok_mini_project.util.JsonUtil;
+import team.omok.omok_mini_project.service.RoomBroadcaster;
+import team.omok.omok_mini_project.service.UserService;
 
 import javax.websocket.Session;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /*
- * 하나의 게임 방에 대해 모든 상태 저장 + 유일하게 상태 변경 할 수 있는 객체
- *
- * 방 ID
- * 참가자 목록
- * 관전자 목록
- * WebSocket 세션들
- * 현재 게임(Game) 참조
- *
- * (참고) 스레드 세이프해야하는 부분
- * * 게임 시작 조건 판단
- * * 플레이어 추가
- * * 게임 상태 변경
- * @see RoomManager
+ * Room (도메인 엔티티)
+ * - 방의 상태
+ * - 플레이어 정보
+ * - 게임 시작 조건
+ * - 게임 로직 실행
+ * - 게임 상태 전이
+ * - Session, WebSocket, JSON, Thread 없음
  */
 @Data
 public class Room {
-    UserServices userService = new UserServices();
+    UserService userService = new UserService();
 
     private static final int MAX_PLAYER = 2;
 
@@ -40,13 +38,17 @@ public class Room {
     private final long createdAt;                   // 방 생성 시간
     private final RecordDAO recordDAO = new RecordDAO();
 
-    private final List<Integer> players = new ArrayList<>(MAX_PLAYER);                // 플레이어(user_id 저장)
-    private final Set<Session> playerSessions = ConcurrentHashMap.newKeySet();        // 플레이어 세션
-    private final Set<Session> spectatorSessions = ConcurrentHashMap.newKeySet();     // 관전자 세션
+    // 플레이어(user_id 저장 -> HTTP로 /enter 통해 들어오는 플레이어 아이디 저장 필요)
+    private final List<Integer> players = new ArrayList<>(MAX_PLAYER);
 
-    private RoomStatus status = RoomStatus.WAIT;     // 방 상태: WAITING, READY, COUNTDOWN, PLAYING, END
+    // 플레이어 세션 (userId -> session)
+    private final Map<Integer, Session> playerSessionMap = new ConcurrentHashMap<>();
 
+    // 관전자 세션
+    private final Set<Session> spectatorSessions = ConcurrentHashMap.newKeySet();
 
+    // 방 상태: WAITING, READY, COUNTDOWN, PLAYING, END
+    private RoomStatus status = RoomStatus.WAIT;
 
     // 게임
     private Game game;
@@ -58,94 +60,121 @@ public class Room {
         this.createdAt = System.currentTimeMillis();
     }
 
-    ////////////// 상태 관리 ///////////////
+    /// /////////// 상태 전이 ///////////////
 
-    private synchronized void updateStatus(RoomStatus nextStatus){
-        if(this.status == nextStatus) return;
-        this.status = nextStatus;
+    private synchronized void updateStatus(RoomStatus newStatus) {
+        if (this.status == newStatus) return;
+        this.status = newStatus;
 
-        switch (nextStatus){
-            case WAIT ->{
+        // 상태별 트리거
+        switch (newStatus) {
+            case COUNTDOWN -> startCountdown();
+            case PLAYING -> startGame();
+            case END -> {
+                // END 처리 정책은 프로젝트에 따라 다름.
+                // 바로 cleanUp() 하면 마지막 메시지 전송 전에 방이 제거될 수 있어,
+                // 필요할 때만 호출하도록 분리해둠.
             }
-            case READY->{
-                tryStartGame();
-            }
-            case COUNTDOWN ->{
-                startCountdown();
-            }
-            case PLAYING->{
-                startGame();
-            }
-            case END->{
-                cleanUp();
+            default -> {
             }
         }
     }
 
-    ////////////// 세션 관리 ///////////////
+    //////////////// 세션 관리 ////////////////
 
-    // 세션에 유저 혹은 관전자 추가
+    /**
+     * 기본값은 "플레이어로 시도" (players에 없으면 관전자로 들어감)
+     */
     public synchronized void addSession(int userId, Session session) {
-        System.out.println("[INFO]Room-addSession: " + session);
-        try{
-            if(this.players.contains(userId)){
-                UserVO vo = userService.getUserById(userId);
-                this.playerSessions.add(session);
-                // 디버깅용
-                broadcastAll(new WsMessage<>(
-                        MessageType.JOIN,
-                        Map.of(
-                                "userId", userId,
-                                "userInfo", vo
-                        )
-                ));
-
-            }else{
-                this.spectatorSessions.add(session);
-            }
-
-        }catch (Exception e){}
-
-        if(isReady() && this.status == RoomStatus.WAIT){
-            System.out.println("플레이어 세션: " + session.getId());
-            updateStatus(RoomStatus.READY);
-        }
+        addSession(userId, session, false);
     }
 
+    /**
+     * 역할 포함 세션 등록
+     *
+     * @param isSpectator true면 무조건 관전자로 등록
+     */
+    public synchronized JoinResult addSession(int userId, Session session, boolean isSpectator) {
+        System.out.println("[INFO] Room-addSession: roomId=" + roomId
+                + ", userId=" + userId
+                + ", sessionId=" + session.getId()
+                + ", isSpectator=" + isSpectator);
 
-    // 세션에서 유저 혹은 관전자 삭제
-    public synchronized void removeSession(int userId, Session session) {
-        this.players.remove(Integer.valueOf(userId));
-        this.playerSessions.remove(session);
+        try {
+            // 1) 관전자면 관전자 세션으로만 등록
+            if (isSpectator) {
+                this.spectatorSessions.add(session);
+                return JoinResult.SPECTATOR_JOINED;
+            }
+
+            // 2) 플레이어로 들어왔더라도, players에 포함된 유저만 "플레이어"로 인정
+            if (this.players.contains(userId)) {
+
+                // 플레이어 세션 등록 (재접속이면 덮어쓰기)
+                this.playerSessionMap.put(userId, session);
+
+            } else {
+                // players에 없는 유저는 관전자로 처리(권한 안전)
+                this.spectatorSessions.add(session);
+                return JoinResult.SPECTATOR_JOINED;
+            }
+
+        } catch (Exception e) {
+            System.out.println("[WARN] Room-addSession exception: " + e.getMessage());
+        }
+
+        // READY 조건 달성 시 상태 변경
+        if (isReady() && this.status == RoomStatus.WAIT) {
+            updateStatus(RoomStatus.READY);
+            return JoinResult.ROOM_READY;
+        }
+
+        return JoinResult.PLAYER_JOINED;
+    }
+
+    /**
+     * 세션에서 유저 혹은 관전자 삭제
+     * - 관전자는 players를 건드리면 안 됨
+     * - 플레이어 세션일 때만 players.remove 및 게임 종료 로직을 탄다
+     */
+    public synchronized LeaveResult removeSession(int userId, Session session) {
+
+        boolean wasPlayer = this.playerSessionMap.containsKey(userId);
+
+        // 세션 제거
+        this.playerSessionMap.remove(userId);
         this.spectatorSessions.remove(session);
 
+        // 관전자였다면 여기서 종료 (게임 상태 영향 X)
+        if (!wasPlayer) {
+            return LeaveResult.SPECTATOR_LEFT;
+        }
+
+        // 플레이어였던 경우만 players에서도 제거
+        this.players.remove(Integer.valueOf(userId));
+
         // 게임 도중 방 나간 경우
-        if(!isReady() && this.status == RoomStatus.PLAYING){
+        if (!isReady() && this.status == RoomStatus.PLAYING) {
             updateStatus(RoomStatus.END);
-            broadcastToPlayers(new WsMessage<>(
-                    MessageType.LEAVE,
-                    Map.of("reason", "PLAYER GG")
-            ));
-            return;
+
+            return LeaveResult.PLAYER_LEFT_DURING_GAME;
         }
 
         // 게임 시작 전에 방 나간 경우
-        if(!isReady() && (this.status == RoomStatus.READY || this.status == RoomStatus.COUNTDOWN)){
+        if (!isReady() && (this.status == RoomStatus.READY || this.status == RoomStatus.COUNTDOWN)) {
             updateStatus(RoomStatus.WAIT);
-            broadcastToPlayers(new WsMessage<>(
-                    MessageType.LEAVE,
-                    Map.of("reason", "PLAYER_LEFT"))
-            );
+
+            return LeaveResult.PLAYER_LEFT_BEFORE_START;
         }
 
         // 아예 방이 비어버린 경우
-        if(this.playerSessions.isEmpty() && this.players.isEmpty()){
+        if (this.playerSessionMap.isEmpty() && this.players.isEmpty()) {
             updateStatus(RoomStatus.END);
-            broadcastToPlayers(new WsMessage<>(
-                    MessageType.GAME_END,
-                    Map.of("reason", "ROOM EMPTY"))
-            );
+            return LeaveResult.ROOM_EMPTY;
+
         }
+
+        return LeaveResult.SPECTATOR_LEFT;
     }
 
     public synchronized void tryAddPlayer(int userId) {
@@ -160,10 +189,10 @@ public class Room {
     }
 
 
-    ////////////// 게임 흐름 제어 ///////////////
+    /// /////////// 게임 흐름 제어 ///////////////
 
     public synchronized void tryStartGame() {
-        if(this.status != RoomStatus.READY) {
+        if (this.status != RoomStatus.READY) {
             return;
         }
         updateStatus(RoomStatus.COUNTDOWN);
@@ -175,20 +204,22 @@ public class Room {
 
         new Thread(() -> {
             try {
+                RoomBroadcaster broadcaster = new RoomBroadcaster();
                 for (int i = 5; i >= 1; i--) {
-                    if(this.status != RoomStatus.COUNTDOWN){
+                    if (this.status != RoomStatus.COUNTDOWN) {
                         return;
                     }
-                    Thread.sleep(1000);
 
-                    broadcastAll(new WsMessage<>(
+                    broadcaster.broadcastAll(this, new WsMessage<>(
                             MessageType.COUNTDOWN,
                             Map.of("sec", i)
                     ));
+
+                    Thread.sleep(1000);
                 }
 
                 // 게임 시작
-                if(isReady()){
+                if (isReady()) {
                     updateStatus(RoomStatus.PLAYING);
                 }
 
@@ -199,40 +230,39 @@ public class Room {
     }
 
     // 게임 시작 함수
-    private synchronized void startGame(){
-        System.out.println("플레이어: " + players + " / 플레이어 세션: " + playerSessions);
-        if(!isReady()) return;
+    private synchronized void startGame() {
+        System.out.println("플레이어: " + players + " / 플레이어 세션: " + playerSessionMap);
+        if (!isReady()) return;
 
         // 게임 초기화
         this.game = new Game(players.get(0), players.get(1));
         this.game.startGame();
         System.out.println("게임시작");
-        // 클라이언트에게 자신의 색 전달
-//        broadcastToPlayers(new WsMessage<>(
-//                MessageType.GAME_START,
-//                Map.of(
-//                    "blackPlayerId", this.game.state.getBlackUserId(),
-//                    "whitePlayerId", this.game.state.getWhiteUserId()
-//                )
-//        ));
-        for (Session s : playerSessions) {
+
+        RoomBroadcaster broadcaster = new RoomBroadcaster();
+
+        for (Session s : playerSessionMap.values()) {
             int userId = (int) s.getUserProperties().get("user_id");
             String myStone =
                     (userId == game.state.getBlackUserId()) ? "BLACK" : "WHITE";
-            System.out.println(userId + ": " + myStone);
-            sendToSession(s, new WsMessage<>(
+
+            broadcaster.broadcastToSession(s, new WsMessage<>(
                     MessageType.GAME_START,
                     Map.of(
-                            "myUserId", userId,
                             "myColor", myStone,
-                            "firstTurn", game.state.getTurn().toString()
+                            "myUserId", userId,
+                            "blackPlayerId", game.state.getBlackUserId(),
+                            "whitePlayerId", game.state.getWhiteUserId(),
+                            "firstTurn", "BLACK"
+
                     )
             ));
+            System.out.println(userId + ": " + myStone);
         }
     }
 
     // 게임 종료 함수
-    private synchronized void endGame(){
+    public synchronized void endGame() {
         // TODO: 게임 결과 저장 및 유저 전적 업데이트
         // 게임 상태에서 승자 ID 가져오기
         int winnerId = this.game.state.getWinnerId();
@@ -250,86 +280,20 @@ public class Room {
     }
 
     // 게임 방 정리
-    private synchronized void cleanUp(){
+    private synchronized void cleanUp() {
         RoomManager.getInstance().removeRoom(roomId);
     }
 
-    // 게임에 데이터 전달 및 결과 저장
-    public synchronized void handleMove(int userId, int x, int y){
-        if(this.status != RoomStatus.PLAYING){
-            return;
+    public synchronized MoveResult handleMove(int userId, int x, int y) {
+        if (this.status != RoomStatus.PLAYING) {
+            return null;
         }
 
-        MoveResult result = this.game.rule.placeStone(game.state, x, y);
-        handleMoveResult(result, userId);
-    }
-
-    // 게임에서 받은 결과 처리
-    private void handleMoveResult(MoveResult result, int userId){
-        switch (result.getType()) {
-            // 정상 착수 처리
-            case MOVE_OK -> {
-                broadcastAll(new WsMessage<>(
-                        MessageType.MOVE_OK,
-                        Map.of(
-                                "x", result.getX(),
-                                "y", result.getY(),
-                                "color", this.game.state.getStone(result.getX(), result.getY())
-                        )
-                ));
-            }
-            // 유효하지 않은 자리
-            case INVALID_POSITION -> {
-                sendErrorToUser(userId, result.getType().name(), result.getReason());
-            }
-            // 유효하지 않은 턴 처리
-            case INVALID_TURN -> {
-                // 타임아웃인 경우, 게임 종료 및 승자 처리
-                if (result.getReason().equals("TIMEOUT")){
-                    broadcastAll(new WsMessage<>(
-                            MessageType.GAME_END,
-                            Map.of(
-                                    "reason", "TIMEOUT",
-                                    "winner", game.state.getWinnerId()
-                            )
-                    ));
-
-                    endGame();
-                }
-                sendErrorToUser(userId, result.getType().name(), result.getReason());
-            }
-
-            // 승리 처리
-            case WIN -> {
-                // 정상 착수 결과 전달
-                broadcastAll(new WsMessage<>(
-                        MessageType.MOVE_OK,
-                        Map.of(
-                                "x", result.getX(),
-                                "y", result.getY(),
-                                "color", this.game.state.getStone(result.getX(), result.getY())
-                        )
-                ));
-
-                // 승자 전달
-                broadcastAll(new WsMessage<>(
-                        MessageType.GAME_END,
-                        Map.of("winner", result.getWinnerId())
-                ));
-
-                // 저장
-                endGame();
-            }
-
-            // 무승부 처리
-            case DRAW -> {
-
-            }
-        }
+        return this.game.rule.placeStone(this.game.state, x, y);
     }
 
 
-    ////////////// 유틸 ///////////////
+    /// /////////// 유틸 ///////////////
 
     public synchronized boolean isFull() {
         return this.players.size() >= MAX_PLAYER;
@@ -337,89 +301,7 @@ public class Room {
 
     // 게임 시작 가능 조건
     private boolean isReady() {
-        return this.players.size() == MAX_PLAYER && this.playerSessions.size() == MAX_PLAYER;
-    }
-
-    // 해당 방 유저 + 관전자에게 broadcast
-    public void broadcastAll(Object message) {
-        try {
-            broadcastToPlayers(message);
-            broadcastToSpectators(message);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 방 플레이어들에게만 broadcast
-    public void broadcastToPlayers(Object message) {
-        try {
-            String json = JsonUtil.MAPPER.writeValueAsString(message);
-            for (Session s : this.playerSessions) {
-                s.getBasicRemote().sendText(json);
-                System.out.println(json);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 방 관전자들에게만 broadcast
-    public void broadcastToSpectators(Object message) {
-        try {
-            String json = JsonUtil.MAPPER.writeValueAsString(message);
-            for (Session s : this.spectatorSessions) {
-                s.getBasicRemote().sendText(json);
-                System.out.println(json);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 한 명의 유저에게만 메세지 전달
-    private void sendToSession(Session session, Object message) {
-        try {
-            String json = JsonUtil.MAPPER.writeValueAsString(message);
-            session.getBasicRemote().sendText(json);
-        } catch (Exception ignored) {}
-    }
-
-    // 한 명의 유저에게만 에러 메세지 전달
-    private void sendErrorToUser(int userId, String error, String msg) {
-        for (Session s : this.playerSessions) {
-            Object sid = s.getUserProperties().get("user_id");
-            if (sid != null && Integer.parseInt(sid.toString()) == userId) {
-                try {
-                    s.getBasicRemote().sendText(
-                            JsonUtil.MAPPER.writeValueAsString(
-                                    new WsMessage<>(
-                                            MessageType.ERROR,
-                                            Map.of(
-                                                "code", error,
-                                                "message", msg
-                                            )
-                                    )
-                            )
-                    );
-                } catch (Exception ignored) {}
-
-                return;
-            }
-        }
-    }
-
-    public void handleChat(int userId, String msg) {
-        boolean isPlayer = players.contains(userId);
-        int playerIndex = isPlayer ? players.indexOf(userId) + 1 : -1;
-
-        broadcastAll(new WsMessage<>(
-                MessageType.CHAT,
-                Map.of(
-                        "senderRole", isPlayer ? "PLAYER" : "SPECTATOR",
-                        "playerIndex", playerIndex,
-                        "message", msg
-                )
-        ));
+        return this.players.size() == MAX_PLAYER && this.playerSessionMap.size() == MAX_PLAYER;
     }
 
 }

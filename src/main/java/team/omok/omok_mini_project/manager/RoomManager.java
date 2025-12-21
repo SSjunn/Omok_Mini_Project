@@ -1,8 +1,6 @@
 package team.omok.omok_mini_project.manager;
 
-import team.omok.omok_mini_project.controller.LobbyWebSocket;
 import team.omok.omok_mini_project.domain.Room;
-import team.omok.omok_mini_project.domain.vo.UserVO;
 
 import javax.websocket.Session;
 import java.util.Comparator;
@@ -12,15 +10,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * 방 저장소 + 조회 전용
+ * <p>
  * 서버 전체에 존재하는 모든 room을 관리하며, 싱글톤으로 구현된다.
  * RoomManager는 Room 상태를 알지 못하며,
- * 오직 조회/생성/삭제만 수행한다.
+ * 오직 생성/조회/삭제/목록 반환
  *
- * @function RoomManager.getInstance()
- * @function public Room getRoomById(String roomId)
- * @function public List<Room> getWaitingRooms()
- * @function public Room createRoom(String userId)
- * @function public boolean removeRoom(int roomId)
  * @see Room
  *
  */
@@ -33,7 +28,7 @@ public class RoomManager {
         return instance;
     }
 
-
+    // 방 생성
     public Room createRoom(int userId) {
         String roomId = UUID.randomUUID().toString();
         Room room = new Room(roomId, userId);
@@ -52,25 +47,7 @@ public class RoomManager {
         return room;
     }
 
-    public void enterRoom(String roomId, UserVO user) {
-        Room room = rooms.get(roomId);
-        if (room == null) {
-            throw new IllegalArgumentException("방이 존재하지 않습니다");
-        }
-        System.out.println("[INFO]RoomManager - enterRoom:" + roomId);
-        room.tryAddPlayer(user.getUserId());
-
-        // 로비 웹소켓 test용
-        // TODO: LobbyWebSocket으로 바꾸기
-        LobbyManager.getInstance().broadcastRoomList();
-
-        // TODO:
-        // 현재는 단순화를 위해 RoomManager에서 직접 LobbyWebSocket을 호출한다.
-        // 추후 이벤트 기반 구조로 변경 시 제거 대상.
-        //LobbyWebSocket.broadcastRoomList();
-    }
-
-    public void enterRoomAsSpectator(String roomId, Session session){
+    public void enterRoomAsSpectator(String roomId, Session session) {
         Room room = rooms.get(roomId);
         if (room == null) {
             throw new IllegalArgumentException("방이 존재하지 않습니다");
@@ -78,7 +55,7 @@ public class RoomManager {
         room.addSpectatorSession(session);
     }
 
-    public boolean removeRoom(String roomId){
+    public boolean removeRoom(String roomId) {
         boolean removed = rooms.remove(roomId) != null;
 
         // 로비에 방 목록 업데이트 전송 (실시간으로 방이 사라짐)

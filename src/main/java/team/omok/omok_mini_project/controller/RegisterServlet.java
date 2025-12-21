@@ -1,7 +1,7 @@
 package team.omok.omok_mini_project.controller;
 
 import team.omok.omok_mini_project.domain.vo.UserVO;
-import team.omok.omok_mini_project.service.UserServices;
+import team.omok.omok_mini_project.service.UserService;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -13,11 +13,11 @@ import java.io.IOException;
 @WebServlet("/register")
 public class RegisterServlet extends HttpServlet {
 
-    private UserServices userService;
+    private UserService userService;
 
     @Override
     public void init() {
-        this.userService = new UserServices();
+        this.userService = new UserService();
     }
 
     @Override

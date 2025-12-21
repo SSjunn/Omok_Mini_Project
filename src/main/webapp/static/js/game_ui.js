@@ -18,9 +18,8 @@ const messageHandlers = {
     GAME_END: handleGameEnd,
     CHAT: handleChat,
     ERROR: handleError,
+    ROOM_MEMBERS: handleRoomMembers
 };
-
-
 
 function handleServerMessage(msg) {
     const handler = messageHandlers[msg.type];
@@ -32,9 +31,10 @@ function handleServerMessage(msg) {
 }
 
 function handleJoin(payload) {
-    // payload 예시: { userId, role }
-    // 지금은 굳이 화면에 표시 안 해도 됨
+    // 아이디, 프로필 사진, 닉네임
     console.log("JOIN:", payload);
+    myUserId = payload.userId;
+    updatePlayerUI(payload);
 }
 
 function handleLeave(payload) {
@@ -50,9 +50,9 @@ function handleGameStart(payload) {
         myColor = payload.myColor;
         console.log("내 색:", myColor);
     }
-    if(payload.myUserId){
-        myUserId = payload.myUserId;
-    }
+    // if(payload.myUserId){
+    //     myUserId = payload.myUserId;
+    // }
 
     startGame(payload.firstTurn);
 }
@@ -67,7 +67,6 @@ function handleRoomWait(payload) {
 }
 
 function handleGameEnd(payload) {
-
     // 타임아웃으로 인한 게임 종료 처리
     if(payload.reason === "TIMEOUT"){
         if (payload.winner === myUserId) {
@@ -123,11 +122,11 @@ function renderBoard() {
         for (let x = 0; x < BOARD_SIZE; x++) {
             const cell = document.createElement("div");
             cell.className = "cell";
+            gridLayer.appendChild(cell);
             cell.onclick = () => {
                 console.log("cell clicked:", x, y);
                 placeStone(x, y);
             }
-            gridLayer.appendChild(cell);
         }
     }
 }
@@ -186,5 +185,24 @@ function updateActivePlayer(turnColor) {
         playerLeftEl.classList.add("active");
     } else if (turnColor === "WHITE") {
         playerRightEl.classList.add("active");
+    }
+}
+
+function handleRoomMembers(payload) {
+    console.log("현재 방 멤버 리스트:", payload);
+    payload.forEach(user => updatePlayerUI(user));
+}
+
+function updatePlayerUI(user) {
+    const isOwner = String(user.userId) === String(OWNER_ID);
+    const targetEl = isOwner ? playerLeftEl : playerRightEl;
+
+    if (targetEl) {
+        const imgEl = targetEl.querySelector(".profile-img");
+        if (imgEl) {
+            // 경로가 상위 폴더를 가리키고 있다면 contextPath 처리가 필요할 수 있음
+            imgEl.src = user.profileImg;
+        }
+        // 닉네임 표시를 위한 엘리먼트가 있다면 여기서 업데이트 (예: targetEl.querySelector(".name").innerText = user.nickname)
     }
 }
