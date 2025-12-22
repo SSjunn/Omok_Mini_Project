@@ -122,10 +122,13 @@ public class GameWebSocket {
 
 
     private int getUserId(Session session) {
-        return Integer.parseInt(
-                String.valueOf(session.getUserProperties().get("user_id"))
-        );
+        Object uid = session.getUserProperties().get("user_id");
+        if (uid == null) {
+            throw new IllegalStateException("user_id not found in ws session");
+        }
+        return Integer.parseInt(uid.toString());
     }
+
 
 
 }

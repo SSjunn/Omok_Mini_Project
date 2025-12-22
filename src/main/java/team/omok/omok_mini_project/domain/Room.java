@@ -87,30 +87,44 @@ public class Room {
     // 세션에 유저 혹은 관전자 추가
     public synchronized void addSession(int userId, Session session) {
         System.out.println("[INFO]Room-addSession: " + session);
-        try{
-            if(this.players.contains(userId)){
-                UserVO vo = userService.getUserById(userId);
+
+        try {
+            if (this.players.contains(userId)) {
+
+                // 비회원 로그인 : 게스트/DB 없는 userId일 수 있으니 null-safe
+                UserVO vo = null;
+                try {
+                    vo = userService.getUserById(userId);
+                } catch (Exception ignored) {}
+
                 this.playerSessions.add(session);
-                // 디버깅용
+
+                // 비회원 로그인 : Map.of는 null 금지 → HashMap 사용 (비회원 로그인 null point error뜸)
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("userId", userId);
+
+                // vo가 있으면 넣고, 없으면 최소 정보만 보냄
+                if (vo != null) payload.put("userInfo", vo);
+
                 broadcastAll(new WsMessage<>(
                         MessageType.JOIN,
-                        Map.of(
-                                "userId", userId,
-                                "userInfo", vo
-                        )
+                        payload
                 ));
 
-            }else{
+            } else {
                 this.spectatorSessions.add(session);
             }
 
-        }catch (Exception e){}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-        if(isReady() && this.status == RoomStatus.WAIT){
+        if (isReady() && this.status == RoomStatus.WAIT) {
             System.out.println("플레이어 세션: " + session.getId());
             updateStatus(RoomStatus.READY);
         }
     }
+
 
 
     // 세션에서 유저 혹은 관전자 삭제
