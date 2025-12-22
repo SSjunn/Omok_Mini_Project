@@ -1,5 +1,6 @@
 const statusEl = document.getElementById("status");
 const countdownEl = document.getElementById("countdown");
+const countdownOverlay = document.getElementById("countdownOverlay");
 const boardEl = document.getElementById("board");
 const playerLeftEl = document.querySelector(".player-left");
 const playerRightEl = document.querySelector(".player-right");
@@ -65,6 +66,10 @@ function handleCountdown(payload) {
 }
 
 function handleGameStart(payload) {
+    // 게임 시작 시 카운트다운 숨김
+    countdownOverlay.style.display = "none";
+    statusEl.innerText = "게임 시작!"; // 혹은 현재 턴 표시로 전환
+
     if (payload.myColor) {
         myColor = payload.myColor;
     }
@@ -147,10 +152,14 @@ function handleBoardSnapshot(payload) {
     console.log(`현재 ${turn}의 턴, 남은 시간: ${remainingTime}ms`);
 }
 
-
 function showCountdown(sec) {
-    statusEl.innerText = "게임 준비 중...";
-    countdownEl.innerText = `시작까지 ${sec}초`;
+    statusEl.innerText = "게임 시작 임박!";
+
+    // 오버레이 표시
+    countdownOverlay.style.display = "flex";
+    countdownEl.innerText = sec;
+
+    // 카운트다운 효과 (숫자가 작아졌다가 커지는 애니메이션 등을 CSS로 추가 가능)
 }
 
 function renderBoard() {

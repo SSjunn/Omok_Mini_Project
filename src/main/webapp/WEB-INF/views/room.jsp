@@ -45,9 +45,16 @@
 
 <body>
 
-<div id="status"></div>
-<div id="countdown"></div>
 <div class="room-container">
+    <div class="room-header">
+        <div class="room-info">Room ID: <span id="roomIdDisplay"><%= room.getRoomId() %></span></div>
+        <div id="status" class="game-status">대기 중...</div>
+    </div>
+
+    <div id="countdownOverlay" class="countdown-overlay" style="display: none;">
+        <div id="countdown" class="countdown-number"></div>
+    </div>
+
     <!-- 왼쪽 : 게임 -->
     <section class="game-section">
         <!-- 게임 보드 영역 -->
