@@ -8,7 +8,18 @@ let gridLayer = null;
 let myColor = null;
 let myUserId = null;
 let isSpectator = false;
-// console.log("game_ui.js loaded", boardEl);
+
+// 타이머 추가
+let timerInterval = null;
+const TURN_TIME_SEC = 30;
+const timerBar = document.querySelector(".timerbar");
+
+// 타이머 바 내부에 채워질 div 생성 (최초 1회)
+if (!timerBar.querySelector(".timer-fill")) {
+    const fill = document.createElement("div");
+    fill.className = "timer-fill";
+    timerBar.appendChild(fill);
+}
 
 const messageHandlers = {
     JOIN: handleJoin,
@@ -79,10 +90,12 @@ function handleGameStart(payload) {
     }
 
     startGame(payload.firstTurn);
+    startTurnTimer();
 }
 
 function handleMoveOk(payload) {
     applyMove(payload.x, payload.y, payload.color);
+    startTurnTimer();
 }
 
 function handleRoomWait(payload) {
@@ -92,6 +105,8 @@ function handleRoomWait(payload) {
 
 function handleGameEnd(payload) {
     console.log(myUserId);
+    clearInterval(timerInterval);
+
     // 타임아웃으로 인한 게임 종료 처리
     if (payload.reason === "TIMEOUT") {
         // 플레이어
@@ -304,4 +319,35 @@ function resetPlayerUI(leftUserId) {
         const nameEl = targetEl.querySelector(".player-nickname");
         if (nameEl) nameEl.innerText = "Waiting...";
     }
+}
+
+function startTurnTimer() {
+    const fill = timerBar.querySelector(".timer-fill");
+
+    // 초기화
+    clearInterval(timerInterval);
+    fill.style.width = "100%";
+    fill.classList.remove("danger");
+
+    let timeLeft = TURN_TIME_SEC;
+
+    timerInterval = setInterval(() => {
+        timeLeft -= 0.1; // 0.1초 단위 업데이트
+        const percent = (timeLeft / TURN_TIME_SEC) * 100;
+
+        fill.style.width = `${percent}%`;
+
+        if (timeLeft <= 10) { // 10초 남으면 빨간색
+            fill.classList.add("danger");
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+
+            console.log("시간 초과! 강제 착수 전송");
+
+            // (-1, -1) 좌표로 MOVE 메시지 전송 -> 서버가 TIMEOUT 판정
+            placeStone(-1, -1);
+        }
+    }, 100);
 }

@@ -283,12 +283,27 @@ body {
 
 /* 타이머 바 */
 .timerbar {
-    width: 85%;
+    width: 85%; /* 부모 너비에 맞춤 */
     height: 20px;
     background: #eee;
     border-radius: 10px;
     border: 2px solid #333;
     overflow: hidden;
+    position: relative;
+}
+
+.timer-fill {
+    height: 100%;
+    background-color: #4CAF50; /* 초록색 시작 */
+    width: 100%;
+    transform-origin: left;
+    transition: width 1s linear; /* 부드럽게 줄어듦 (JS 제어용) */
+    /* 또는 CSS animation 사용 가능 */
+}
+
+/* 시간이 얼마 안 남았을 때 색상 변경용 클래스 */
+.timer-fill.danger {
+    background-color: #ff5252;
 }
 
 /* 구분선 */

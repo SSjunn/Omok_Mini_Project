@@ -13,6 +13,9 @@ function startGame(firstTurnColor) {
 }
 
 function placeStone(x, y) {
+    if(x === -1 && y === -1){
+        sendMessage("MOVE", { x, y });
+    }
     if (!myColor) return;                // 관전자
     if (currentTurn !== myColor) return; // 내 턴 아님
     if (boardState[y][x]) return;        // 이미 둔 곳
