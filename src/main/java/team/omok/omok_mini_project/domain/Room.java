@@ -1,6 +1,7 @@
 package team.omok.omok_mini_project.domain;
 
 import lombok.Data;
+import team.omok.omok_mini_project.controller.LobbyWebSocket;
 import team.omok.omok_mini_project.domain.dto.WsMessage;
 import team.omok.omok_mini_project.domain.vo.UserVO;
 import team.omok.omok_mini_project.enums.MessageType;
@@ -233,7 +234,6 @@ public class Room {
 
     // 게임 종료 함수
     private synchronized void endGame(){
-        // TODO: 게임 결과 저장 및 유저 전적 업데이트
         // 게임 상태에서 승자 ID 가져오기
         int winnerId = this.game.state.getWinnerId();
 
@@ -247,6 +247,9 @@ public class Room {
         }
 
         updateStatus(RoomStatus.END);
+
+        // 전적 업데이트 후 로비에 랭킹 변경 사항 브로드캐스트
+        LobbyWebSocket.broadcastRanking();
     }
 
     // 게임 방 정리
