@@ -246,6 +246,7 @@ public class Room {
             String myStone =
                     (userId == game.state.getBlackUserId()) ? "BLACK" : "WHITE";
 
+            // TODO: 각 유저의 프로필 사진 전달
             broadcaster.broadcastToSession(s, new WsMessage<>(
                     MessageType.GAME_START,
                     Map.of(

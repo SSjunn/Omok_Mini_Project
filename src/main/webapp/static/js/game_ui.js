@@ -50,9 +50,9 @@ function handleGameStart(payload) {
         myColor = payload.myColor;
         console.log("내 색:", myColor);
     }
-    // if(payload.myUserId){
-    //     myUserId = payload.myUserId;
-    // }
+    if(payload.myUserId){
+        myUserId = payload.myUserId;
+    }
 
     startGame(payload.firstTurn);
 }
@@ -67,6 +67,7 @@ function handleRoomWait(payload) {
 }
 
 function handleGameEnd(payload) {
+    console.log(myUserId);
     // 타임아웃으로 인한 게임 종료 처리
     if(payload.reason === "TIMEOUT"){
         if (payload.winner === myUserId) {

@@ -72,8 +72,8 @@ public class GameWebSocket {
             switch (wsMessage.getType()) {
                 case MOVE -> {
                     // 관전자 착수 불가
-                    WsRole role = (WsRole) session.getUserProperties().get(KEY_WS_ROLE);
-                    if (role == WsRole.SPECTATOR) {
+//                    String role = session.getUserProperties().get(KEY_WS_ROLE).toString();
+                    if (getRole(session) == WsRole.SPECTATOR) {
                         sendError(session, "SPECTATOR_CANNOT_MOVE");
                         return;
                     }
