@@ -268,8 +268,8 @@
         /* 유저 프로필 */
         .user-profile-btn {
             position: relative;
-            height: 45px;
-            width: auto;
+            height: 55px;
+            width: 150px;
             display: flex;
             justify-content: center;
             align-items: center;
