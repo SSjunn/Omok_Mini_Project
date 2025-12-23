@@ -9,8 +9,8 @@ public class DBConnection {
             "jdbc:postgresql://localhost:5432/omok";
 //    private static final String USER = "omokuser";
 //    private static final String PASSWORD = "omokpass";
-    private static final String USER = "kimjaemin";
-    private static final String PASSWORD = "postgres";
+    private static final String USER = "postgres";
+    private static final String PASSWORD = "test1234";
 
     public static Connection getConnection() throws Exception {
         Class.forName("org.postgresql.Driver");

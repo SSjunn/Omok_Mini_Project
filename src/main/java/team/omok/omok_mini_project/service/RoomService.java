@@ -53,6 +53,11 @@ public class RoomService {
     public List<Room> getWaitingRooms() {
         return roomManager.getWaitingRooms();
     }
+    
+    // 로비에 보여줄 방 목록 가져오기 (대기 + 진행중, END 제외)
+    public List<Room> getLobbyRooms() {
+        return roomManager.getLobbyRooms();
+    }
 
     // 빠른 입장: 가장 먼저 생성된 대기 방 반환
     public Room getFirstWaitingRoom() {

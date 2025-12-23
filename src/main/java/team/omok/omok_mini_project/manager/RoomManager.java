@@ -1,14 +1,16 @@
 package team.omok.omok_mini_project.manager;
 
-import team.omok.omok_mini_project.controller.LobbyWebSocket;
-import team.omok.omok_mini_project.domain.Room;
-
-import javax.websocket.Session;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.websocket.Session;
+
+import team.omok.omok_mini_project.controller.LobbyWebSocket;
+import team.omok.omok_mini_project.domain.Room;
+import team.omok.omok_mini_project.enums.RoomStatus;
 
 /**
  * 방 저장소 + 조회 전용
@@ -71,6 +73,14 @@ public class RoomManager {
         return rooms.values().stream()
                 .filter(room -> !room.isFull())
                 .sorted(Comparator.comparingLong(Room::getCreatedAt))  // 생성 시간 오름차순
+                .toList();
+    }
+    
+    // 로비에 보여줄 방 목록: 대기 + 진행중(관전) 포함, 종료(END)만 제외
+    public List<Room> getLobbyRooms() {
+        return rooms.values().stream()
+                .filter(room -> room.getStatus() != RoomStatus.END)
+                .sorted(Comparator.comparingLong(Room::getCreatedAt))
                 .toList();
     }
 
