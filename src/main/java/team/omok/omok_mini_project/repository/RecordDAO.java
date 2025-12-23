@@ -52,4 +52,13 @@ public class RecordDAO {
             e.printStackTrace();
         }
     }
+
+    //회원가입 시 레코드 기본값세팅
+    public void insertRecordDefault(Connection con, int userId) throws Exception {
+        String sql = "INSERT INTO record (user_id) VALUES (?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+        }
+    }
 }

@@ -1,19 +1,24 @@
 package team.omok.omok_mini_project.service;
 
 import team.omok.omok_mini_project.domain.vo.UserVO;
+import team.omok.omok_mini_project.repository.RecordDAO;
 import team.omok.omok_mini_project.repository.UserDAO;
+import team.omok.omok_mini_project.util.DBConnection;
+
+import java.sql.Connection;
 
 public class UserService {
 
     private final UserDAO userDAO = new UserDAO();
+    private final RecordDAO recordDAO = new RecordDAO();
 
     public UserVO getUserById(int userId) throws Exception {
-
         return userDAO.findByUserId(userId);
     }
 
     public void register(UserVO user) throws Exception {
 
+        // 검증
         if (user.getLoginId() == null || user.getLoginId().isBlank())
             throw new IllegalArgumentException("아이디 입력하세요");
 
@@ -23,20 +28,33 @@ public class UserService {
         if (user.getNickname() == null || user.getNickname().isBlank())
             throw new IllegalArgumentException("닉네임 입력하세요");
 
-        if (userDAO.existsByLoginId(user.getLoginId()))
-            throw new IllegalArgumentException("이미 존재하는 아이디");
+        // 2) 트랜잭션 시작
+        try (Connection con = DBConnection.getConnection()) {
+            con.setAutoCommit(false);
 
-        if (userDAO.existsByNickname(user.getNickname()))
-            throw new IllegalArgumentException("이미 존재하는 닉네임");
+            try {
+                //  중복 검사는 트랜잭션 안에서 (원자성 조금 더 좋아짐)
+                if (userDAO.existsByLoginId(user.getLoginId()))
+                    throw new IllegalArgumentException("이미 존재하는 아이디");
 
-        // 비밀번호 해싱
-//        user.setUserPwd(
-//                PasswordUtil.hashWithSalt(user.getUserPwd())
-//        );
+                if (userDAO.existsByNickname(user.getNickname()))
+                    throw new IllegalArgumentException("이미 존재하는 닉네임");
 
-        userDAO.insert(user); //db저장 메서드 호출
+                //  users insert -> 생성된 user_id 받기
+                int userId = userDAO.insertUser(con, user);
 
-        // TODO: user 새로 만들때 record도 같이 insert 해줘야함
+                // record 기본 row 생성 (user_id만 넣고 DEFAULT 사용)
+                recordDAO.insertRecordDefault(con, userId);
+
+                //  커밋
+                con.commit();
+            } catch (Exception e) {
+                con.rollback();  //실패하면 롤백으로 !
+                throw e;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        }
     }
 
     public UserVO login(String loginId, String password) throws Exception {
@@ -45,12 +63,11 @@ public class UserService {
         if (password == null || password.isBlank())
             throw new IllegalArgumentException("비밀번호 입력하세요");
 
-        UserVO user = userDAO.findByLoginId(loginId); //db에서 조회
+        UserVO user = userDAO.findByLoginId(loginId);
         if (user == null)
             throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
 
-        // 지금은 평문 비교(임시). 나중에 해시 비교로 변경.
-        if (!user.getUserPwd().equals(password)) //가져온 pwd가 password랑 다른경우
+        if (!user.getUserPwd().equals(password))
             throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
 
         return user;

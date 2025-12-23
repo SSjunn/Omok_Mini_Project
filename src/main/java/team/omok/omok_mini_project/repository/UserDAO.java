@@ -7,6 +7,7 @@ import team.omok.omok_mini_project.util.DBConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 
 public class UserDAO {
     //    private DataSource ds;  //일단 Connection으로 하기로함
@@ -98,15 +99,15 @@ public class UserDAO {
         }
     }
 
-   public boolean existsByLoginId(String loginId) throws Exception {
-       String sql = "SELECT 1 FROM users WHERE login_id=?";
-       try (Connection con = DBConnection.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)) {
+    public boolean existsByLoginId(String loginId) throws Exception {
+        String sql = "SELECT 1 FROM users WHERE login_id=?";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
-           ps.setString(1, loginId);
-           return ps.executeQuery().next();
-       }
-   }
+            ps.setString(1, loginId);
+            return ps.executeQuery().next();
+        }
+    }
 
     public boolean existsByNickname(String nickname) throws Exception {
         String sql = "SELECT 1 FROM users WHERE nickname=?";
@@ -118,21 +119,25 @@ public class UserDAO {
         }
     }
 
-    public void insert(UserVO user) throws Exception {
+    //유저생성
+    public int insertUser(Connection con, UserVO user) throws Exception {
         String sql = """
-            INSERT INTO users (login_id, user_pwd, nickname, profile_img)
-            VALUES (?, ?, ?, ?)
-        """;
+        INSERT INTO users (login_id, user_pwd, nickname, profile_img)
+        VALUES (?, ?, ?, ?)
+    """;
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getLoginId());
             ps.setString(2, user.getUserPwd());
             ps.setString(3, user.getNickname());
             ps.setString(4, user.getProfileImg());
 
             ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) return rs.getInt(1);
+            }
         }
+        throw new RuntimeException("user_id 생성 실패");
     }
 }

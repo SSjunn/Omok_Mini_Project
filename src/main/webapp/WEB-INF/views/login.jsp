@@ -15,45 +15,44 @@
     if (loginIdVal == null) loginIdVal = "";
 %>
 
-
 <div class="screen">
     <div class="ui-anchor">
-        <form class="login-form"
-              method="post"
-              action="${pageContext.request.contextPath}/login">
 
-            <!-- 왼쪽 칼럼 : LOGIN -->
+        <!-- ✅ login-form은 레이아웃용 컨테이너로만 사용 (form 중첩 제거) -->
+        <div class="login-form">
+
+            <!-- 왼쪽: 일반 로그인 form -->
             <div class="col left">
-                <!-- 에러 메시지 (화면 기준, 판넬 위) -->
+                <form method="post" action="${pageContext.request.contextPath}/login">
 
-                <div class="error <%= (error != null ? "show" : "") %>">
-                    <%= (error != null ? error : "") %>
-                </div>
+                    <div class="error <%= (error != null ? "show" : "") %>">
+                        <%= (error != null ? error : "") %>
+                    </div>
 
-                <input class="input id"
-                       type="text"
-                       name="loginId"
-                       value="<%= loginIdVal %>"
-                       placeholder="아이디"
-                       autocomplete="username"/>
+                    <input class="input id"
+                           type="text"
+                           name="loginId"
+                           value="<%= loginIdVal %>"
+                           placeholder="아이디"
+                           autocomplete="username"/>
 
-                <input class="input pw"
-                       type="password"
-                       name="password"
-                       placeholder="비밀번호"
-                       autocomplete="current-password"/>
+                    <input class="input pw"
+                           type="password"
+                           name="password"
+                           placeholder="비밀번호"
+                           autocomplete="current-password"/>
 
-                <button class="login-btn" type="submit" aria-label="로그인">
-                    <img src="${pageContext.request.contextPath}/static/img/loginButton.png"
-                         alt="로그인"/>
-                </button>
-
+                    <button class="login-btn" type="submit" aria-label="로그인">
+                        <img src="${pageContext.request.contextPath}/static/img/loginButton.png"
+                             alt="로그인"/>
+                    </button>
+                </form>
             </div>
 
-            <!-- 오른쪽 칼럼 : REGISTER -->
+            <!-- 오른쪽: 비회원/회원가입 -->
             <div class="col right">
 
-                <!-- 비회원 로그인: /login으로 POST + guestLogin=true -->
+                <!-- ✅ 비회원 로그인: 별도 form (중첩 아님) -->
                 <form method="post" action="${pageContext.request.contextPath}/login">
                     <input type="hidden" name="guestLogin" value="true">
                     <button type="submit" class="guestlogin-btn" aria-label="비회원로그인">
@@ -71,8 +70,9 @@
                 </a>
 
             </div>
-        </form>
+        </div>
     </div>
 </div>
+
 </body>
 </html>

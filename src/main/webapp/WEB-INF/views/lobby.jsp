@@ -30,7 +30,7 @@
         }
 
         .panel {
-            border: 3px solid black;
+            /*border: 3px solid black;*/
             border-radius: 15px;
             background-color: #eee;
             padding: 15px;
@@ -112,9 +112,10 @@
             display: flex;
             flex-direction: column;
             background-color: rgba(255, 255, 255, 0.4);
-            border: 2px solid #333;
+            border: 2px solid lightgrey;
             border-radius: 10px;
             padding: 10px;
+            overflow-y: auto;
         }
         .chat-messages {
             flex-grow: 1;
@@ -158,7 +159,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            border: 2px inset #ddd;
+            border: 2px inset lightgrey;
             background-color: rgba(255, 255, 255, 0.3);
             border-radius: 10px;
             padding: 10px;
