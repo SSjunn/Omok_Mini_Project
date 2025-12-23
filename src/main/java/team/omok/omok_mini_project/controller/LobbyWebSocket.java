@@ -59,7 +59,7 @@ public class LobbyWebSocket {
     public static void broadcastRoomList() {
         try {
             // RoomManager에서 대기 중인 방 목록 가져오기
-            List<Room> waitingRooms = roomManager.getWaitingRooms();
+            List<Room> waitingRooms = roomManager.getLobbyRooms();
 
             // Room 객체에서 필요한 정보만 추출 (JSON 직렬화 문제 해결)
             List<Map<String, Object>> roomData = new ArrayList<>();

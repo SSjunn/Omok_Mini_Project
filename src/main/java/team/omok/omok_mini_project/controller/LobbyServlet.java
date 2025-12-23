@@ -1,19 +1,20 @@
 package team.omok.omok_mini_project.controller;
 
-import team.omok.omok_mini_project.domain.Room;
-import team.omok.omok_mini_project.domain.dto.RankingDTO;
-import team.omok.omok_mini_project.domain.vo.UserVO;
-import team.omok.omok_mini_project.repository.RecordDAO;
-import team.omok.omok_mini_project.service.RoomService;
-import team.omok.omok_mini_project.service.UserService;
+import java.io.IOException;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.List;
+
+import team.omok.omok_mini_project.domain.Room;
+import team.omok.omok_mini_project.domain.dto.RankingDTO;
+import team.omok.omok_mini_project.domain.vo.UserVO;
+import team.omok.omok_mini_project.repository.RecordDAO;
+import team.omok.omok_mini_project.service.RoomService;
+import team.omok.omok_mini_project.service.UserService;
 
 
 @WebServlet("/lobby/*")
@@ -99,7 +100,7 @@ public class LobbyServlet extends HttpServlet {
 
         // 기본: 로비 화면
         // 대기 중인 방 목록 가져옴
-        List<Room> rooms = roomService.getWaitingRooms();
+        List<Room> rooms = roomService.getLobbyRooms();
 //        List<Room> rooms = roomService.getAllRooms();
 
         // 랭킹 정보 조회
