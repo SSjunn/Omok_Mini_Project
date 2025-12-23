@@ -313,12 +313,12 @@ public class RoomService {
             } else {
                 // 비회원(DB에 없음)인 경우: 기본값 사용
                 nickname = "Guest_" + userId;
-                profileImg = "/omok/static/img/profile/p1.png"; // 기본 프로필 이미지 경로
+                profileImg = "/omok/static/img/profiles/guestImage.png"; // 기본 프로필 이미지 경로
             }
         } catch (Exception e) {
             // 에러 발생 시에도 안전하게 기본값 사용
             nickname = "Guest_" + userId;
-            profileImg = "/omok/static/img/profile/p1.png";
+            profileImg = "/omok/static/img/profiles/p1.png";
         }
 
         // 클라이언트(JS)로 보낼 데이터 맵 구성
